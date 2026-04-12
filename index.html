@@ -652,6 +652,84 @@ function loadEpisodeProgress(ep){
 }
 function clearEpisodeProgress(ep){ localStorage.removeItem('sf_ep_save_'+ep); }
 
+// ── NATIVE INPUT HELPER — works on mobile (triggers iOS keyboard) ─────────────
+// Creates a real HTML <input> overlaid on the Phaser canvas, styled to match.
+// On confirm (Enter key or tap of confirm btn), calls onConfirm(name).
+function makeNativeInput(defaultVal, accentColor, onConfirm) {
+  // Remove any existing input
+  const old = document.getElementById('sf-name-input');
+  if (old) old.remove();
+
+  const canvas = document.querySelector('canvas');
+  const rect   = canvas.getBoundingClientRect();
+  const scaleX = rect.width  / 480;
+  const scaleY = rect.height / 720;
+
+  // Position the input over the centre of the canvas (vertically ~55%)
+  const iw = Math.round(300 * scaleX);
+  const ih = Math.round(52  * scaleY);
+  const ix = Math.round(rect.left + (480/2 - 150) * scaleX);
+  const iy = Math.round(rect.top  + 720 * 0.52 * scaleY);
+
+  const inp = document.createElement('input');
+  inp.id          = 'sf-name-input';
+  inp.type        = 'text';
+  inp.maxLength   = 14;
+  inp.value       = defaultVal || '';
+  inp.placeholder = 'Enter name…';
+  inp.autocomplete = 'off';
+  inp.autocorrect  = 'off';
+  inp.spellcheck   = false;
+  inp.autocapitalize = 'characters';
+
+  Object.assign(inp.style, {
+    position:        'fixed',
+    left:            ix + 'px',
+    top:             iy + 'px',
+    width:           iw + 'px',
+    height:          ih + 'px',
+    fontSize:        Math.round(26 * scaleX) + 'px',
+    fontFamily:      'Arial, sans-serif',
+    fontWeight:      'bold',
+    color:           accentColor || '#ffe866',
+    background:      'rgba(0,8,20,0.97)',
+    border:          '2px solid ' + (accentColor || '#cc8833'),
+    borderRadius:    '4px',
+    textAlign:       'center',
+    outline:         'none',
+    zIndex:          '9999',
+    letterSpacing:   '2px',
+    caretColor:      accentColor || '#ffe866',
+    padding:         '0 8px',
+    boxSizing:       'border-box',
+  });
+
+  document.body.appendChild(inp);
+
+  // Focus immediately — triggers iOS keyboard
+  setTimeout(() => { inp.focus(); inp.select(); }, 80);
+
+  const confirm = () => {
+    const name = inp.value.trim().toUpperCase().slice(0, 14);
+    if (!name) return;
+    inp.remove();
+    onConfirm(name);
+  };
+
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); confirm(); }
+  });
+
+  // Return confirm fn so caller can wire a button to it
+  return confirm;
+}
+
+function removeNativeInput() {
+  const inp = document.getElementById('sf-name-input');
+  if (inp) inp.remove();
+}
+
+
 // ── BOOT ──────────────────────────────────────────────────────────────────────
 class BootScene extends Phaser.Scene {
   constructor(){super('Boot');}
@@ -1188,11 +1266,10 @@ class CallsignEntryScene extends Phaser.Scene {
   constructor(){super('CallsignEntry');}
   create(){
     Sfx.init();
-    const _sp=localStorage.getItem('sf_pilot')||'';
-    this.pilotName=_sp;
+    const saved=localStorage.getItem('sf_pilot')||'';
+
     this.add.rectangle(W/2,H/2,W,H,0x040d1a,1);
     this.bg=this.add.tileSprite(0,0,W,H,'bg-stars').setOrigin(0).setAlpha(.6).setTint(0xaaddff);
-    // Sparse star field
     const sg=this.add.graphics().setDepth(0);
     for(let i=0;i<80;i++){
       sg.fillStyle(0xffffff,Math.random()*0.3+0.05);
@@ -1204,65 +1281,76 @@ class CallsignEntryScene extends Phaser.Scene {
       this.add.image(W/2,164,'sf-logo').setScale(0.72);
     else
       this.add.text(W/2,148,'STARFALL',{fontSize:'48px',fontFamily:'Arial',fontStyle:'bold',color:'#ffe866'}).setOrigin(.5);
+
     this.add.text(W/2,224,'IDENTIFY YOURSELF, PILOT',
       {fontSize:'13px',fontFamily:'Courier New',fontStyle:'bold',color:'#cc8833',letterSpacing:4}).setOrigin(.5);
 
-    // Card
+    // Card background
     this.add.rectangle(W/2,H/2+52,W-48,210,0x001122,0.97).setStrokeStyle(2,0x4466aa);
-    // Top stripe
     this.add.rectangle(W/2,H/2-50,W-48,7,0xcc7700,1).setOrigin(.5,0);
-
     this.add.text(W/2,H/2-36,'PILOT CALLSIGN',
       {fontSize:'14px',fontFamily:'Arial',fontStyle:'bold',color:'#ffcc44',letterSpacing:4}).setOrigin(.5);
     this.add.rectangle(W/2,H/2-14,W-80,1,0x443311);
     this.add.text(W/2,H/2+2,'What name do they know you by?',
       {fontSize:'13px',fontFamily:'Arial',color:'#886644'}).setOrigin(.5);
 
-    // Input box
+    // Visual input box (decorative — real input floats over this)
     this.add.rectangle(W/2,H/2+34,W-80,46,0x000d1a,1).setStrokeStyle(2,0x886622);
-    this.nameTxt=this.add.text(W/2,H/2+34,'▋',
-      {fontSize:'30px',fontFamily:'Arial',fontStyle:'bold',color:'#ffe866',align:'center'}).setOrigin(.5);
+    // Tap hint below box
+    this.add.text(W/2,H/2+68,'Tap the box above then type your name',
+      {fontSize:'11px',fontFamily:'Arial',color:'#664422'}).setOrigin(.5);
+    this.add.text(W/2,H/2+86,'Press ENTER or tap CONFIRM when done',
+      {fontSize:'11px',fontFamily:'Arial',color:'#664422'}).setOrigin(.5);
 
-    this.add.text(W/2,H/2+68,'Press ENTER to continue',
-      {fontSize:'12px',fontFamily:'Arial',color:'#664422'}).setOrigin(.5);
-    this.add.text(W/2,H/2+88,'Max 14 characters',
-      {fontSize:'10px',fontFamily:'Courier New',color:'#443322'}).setOrigin(.5);
+    // CONFIRM button
+    const confirmBtn=this.add.rectangle(W/2,H/2+120,180,42,0x331100,0.97)
+      .setStrokeStyle(2,0xcc8833).setInteractive({useHandCursor:true}).setDepth(10);
+    const confirmTxt=this.add.text(W/2,H/2+120,'CONFIRM  ▶',
+      {fontSize:'16px',fontFamily:'Courier New',fontStyle:'bold',
+       color:'#ffcc44',stroke:'#000',strokeThickness:3}).setOrigin(.5).setDepth(11);
+    this.tweens.add({targets:confirmBtn,alpha:0.7,duration:600,yoyo:true,repeat:-1});
 
-    // Blinking cursor
-    this.cursorOn=true;
-    this.time.addEvent({delay:500,loop:true,callback:()=>{
-      this.cursorOn=!this.cursorOn;
-      this.nameTxt.setText((this.pilotName||'')+(this.cursorOn?'|':''));
-    }});
-    this.input.keyboard.on('keydown',e=>this.onKey(e));
+    const go=(name)=>{
+      const n=(name||'').trim().toUpperCase().slice(0,14);
+      if(!n) return;
+      this.registry.set('pilotName',n);
+      localStorage.setItem('sf_pilot',n);
+      Sfx.play('select');
+      removeNativeInput();
+      this.cameras.main.fadeOut(300,0,0,0);
+      this.cameras.main.once('camerafadeoutcomplete',()=>this.scene.start('Ep1Briefing'));
+    };
+
+    // Wire up native input — works on desktop AND mobile
+    let confirmFn=makeNativeInput(saved,'#ffe866',go);
+
+    confirmBtn.on('pointerdown',()=>{
+      // Get current value from the HTML input
+      const inp=document.getElementById('sf-name-input');
+      if(inp) confirmFn();
+      else confirmFn=makeNativeInput('','#ffe866',go);
+    });
+    confirmBtn.on('pointerover',()=>confirmBtn.setFillStyle(0x553300,0.97));
+    confirmBtn.on('pointerout', ()=>confirmBtn.setFillStyle(0x331100,0.97));
+
+    // Re-open input if tapped anywhere on the input box area
+    this.input.on('pointerdown',(p)=>{
+      if(p.y>H/2+10&&p.y<H/2+58){
+        const inp=document.getElementById('sf-name-input');
+        if(inp) inp.focus();
+        else confirmFn=makeNativeInput('','#ffe866',go);
+      }
+    });
+
     this.cameras.main.fadeIn(400,0,0,0);
-    // Keep music flowing from prelude/crawl — only restart if silent
     if(!Music.playing) Music.play('menu');
     Music.armAutoplay('menu');
-    if(this.bg) this._bgT=0;
+    if(this.bg) this.events.on('update',()=>this.bg.tilePositionY-=.5);
   }
-
-  onKey(e){
-    if(e.key==='Enter'){
-      if(this.pilotName.trim().length>0){
-        this.registry.set('pilotName',this.pilotName.trim().toUpperCase());
-        localStorage.setItem('sf_pilot',this.pilotName.trim().toUpperCase());
-        Sfx.play('select');
-        this.cameras.main.fadeOut(300,0,0,0);
-        this.cameras.main.once('camerafadeoutcomplete',()=>this.scene.start('Ep1Briefing'));
-      }
-    } else if(e.key==='Backspace'){
-      this.pilotName=this.pilotName.slice(0,-1);
-      this.nameTxt.setText(this.pilotName+(this.cursorOn?'|':''));
-    } else if(e.key.length===1&&this.pilotName.length<14){
-      this.pilotName+=e.key; Sfx.play('type');
-      this.nameTxt.setText(this.pilotName+(this.cursorOn?'|':''));
-    }
-  }
-  update(){if(this.bg) this.bg.tilePositionY-=.5;}
+  shutdown(){ removeNativeInput(); }
 }
 
-// ── DIFFICULTY SELECT ─────────────────────────────────────────────────────────
+
 class DifficultySelectScene extends Phaser.Scene {
   constructor(){super('DifficultySelect');}
   create(){
@@ -5065,7 +5153,8 @@ class Ep3CallsignScene extends Phaser.Scene {
   constructor(){super('Ep3Callsign');}
   create(){
     Sfx.init();
-    this.pilotName='';
+    const saved=localStorage.getItem('sf_pilot')||'';
+
     this.add.rectangle(W/2,H/2,W,H,0x050008,1);
     const sg=this.add.graphics().setDepth(0);
     for(let i=0;i<120;i++){
@@ -5076,6 +5165,7 @@ class Ep3CallsignScene extends Phaser.Scene {
       this.add.image(W/2,160,'sf-logo').setScale(0.7).setTint(0xcc88ff);
     else
       this.add.text(W/2,148,'STARFALL',{fontSize:'44px',fontFamily:'Arial',fontStyle:'bold',color:'#aa44ff'}).setOrigin(.5);
+
     this.add.text(W/2,222,'EPISODE III — THE VEIL',
       {fontSize:'13px',fontFamily:'Arial',fontStyle:'bold',color:'#cc99ee',letterSpacing:5}).setOrigin(.5);
 
@@ -5086,40 +5176,55 @@ class Ep3CallsignScene extends Phaser.Scene {
     this.add.text(W/2,H/2-10,'What name do they call you in the dark?',
       {fontSize:'12px',fontFamily:'Arial',color:'#bba8cc'}).setOrigin(.5);
     this.add.rectangle(W/2,H/2+22,W-80,46,0x060010,1).setStrokeStyle(2,0x7733bb);
-    this.nameTxt=this.add.text(W/2,H/2+22,'▋',
-      {fontSize:'28px',fontFamily:'Arial',fontStyle:'bold',color:'#cc88ff',align:'center'}).setOrigin(.5);
-    this.add.text(W/2,H/2+56,'Press ENTER to continue',
-      {fontSize:'12px',fontFamily:'Arial',color:'#c0a8d8'}).setOrigin(.5);
+    this.add.text(W/2,H/2+56,'Tap the box above then type your name',
+      {fontSize:'11px',fontFamily:'Arial',color:'#bba8cc'}).setOrigin(.5);
+    this.add.text(W/2,H/2+74,'Press ENTER or tap CONFIRM when done',
+      {fontSize:'11px',fontFamily:'Arial',color:'#bba8cc'}).setOrigin(.5);
 
-    this.cursorOn=true;
-    this.time.addEvent({delay:500,loop:true,callback:()=>{
-      this.cursorOn=!this.cursorOn;
-      this.nameTxt.setText((this.pilotName||'')+(this.cursorOn?'|':''));
-    }});
-    this.input.keyboard.on('keydown',e=>this.onKey(e));
+    // CONFIRM button
+    const confirmBtn=this.add.rectangle(W/2,H/2+110,180,42,0x110022,0.97)
+      .setStrokeStyle(2,0x7733bb).setInteractive({useHandCursor:true}).setDepth(10);
+    const confirmTxt=this.add.text(W/2,H/2+110,'CONFIRM  ▶',
+      {fontSize:'16px',fontFamily:'Courier New',fontStyle:'bold',
+       color:'#cc88ff',stroke:'#000',strokeThickness:3}).setOrigin(.5).setDepth(11);
+    this.tweens.add({targets:confirmBtn,alpha:0.7,duration:600,yoyo:true,repeat:-1});
+
+    const go=(name)=>{
+      const n=(name||'').trim().toUpperCase().slice(0,14);
+      if(!n) return;
+      this.registry.set('pilotName',n);
+      localStorage.setItem('sf_pilot',n);
+      Sfx.play('select');
+      removeNativeInput();
+      this.cameras.main.fadeOut(300,0,0,10);
+      this.cameras.main.once('camerafadeoutcomplete',()=>this.scene.start('Ep3DiffSelect'));
+    };
+
+    let confirmFn=makeNativeInput(saved,'#cc88ff',go);
+
+    confirmBtn.on('pointerdown',()=>{
+      const inp=document.getElementById('sf-name-input');
+      if(inp) confirmFn();
+      else confirmFn=makeNativeInput('','#cc88ff',go);
+    });
+    confirmBtn.on('pointerover',()=>confirmBtn.setFillStyle(0x220033,0.97));
+    confirmBtn.on('pointerout', ()=>confirmBtn.setFillStyle(0x110022,0.97));
+
+    this.input.on('pointerdown',(p)=>{
+      if(p.y>H/2+4&&p.y<H/2+46){
+        const inp=document.getElementById('sf-name-input');
+        if(inp) inp.focus();
+        else confirmFn=makeNativeInput('','#cc88ff',go);
+      }
+    });
+
     this.cameras.main.fadeIn(400,0,0,10);
     Music.play('menu');
   }
-  onKey(e){
-    if(e.key==='Enter'){
-      if(this.pilotName.trim().length>0){
-        this.registry.set('pilotName',this.pilotName.trim().toUpperCase());
-        localStorage.setItem('sf_pilot',this.pilotName.trim().toUpperCase());
-        Sfx.play('select');
-        this.cameras.main.fadeOut(300,0,0,10);
-        this.cameras.main.once('camerafadeoutcomplete',()=>this.scene.start('Ep3DiffSelect'));
-      }
-    } else if(e.key==='Backspace'){
-      this.pilotName=this.pilotName.slice(0,-1);
-      this.nameTxt.setText(this.pilotName+(this.cursorOn?'|':''));
-    } else if(e.key.length===1&&this.pilotName.length<14){
-      this.pilotName+=e.key; Sfx.play('type');
-      this.nameTxt.setText(this.pilotName+(this.cursorOn?'|':''));
-    }
-  }
+  shutdown(){ removeNativeInput(); }
 }
 
-// ── EP3 DIFFICULTY SELECT ─────────────────────────────────────────────────────
+
 class Ep3DiffSelectScene extends Phaser.Scene {
   constructor(){super('Ep3DiffSelect');}
   create(){
