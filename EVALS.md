@@ -1,129 +1,131 @@
 # STARFALL — Evaluation Suite
 
-All checks passing — April 2026.
+Full check list across gameplay, UX, audio, mobile, persistence, and technical correctness.  
+Last updated: April 2026.
 
 ---
 
-## 1. Core Architecture (8)
+## 1. Core Architecture (8 checks)
 
 - [x] Single `index.html` — no external assets required
-- [x] Phaser 3.60.0 via CDN; cached after first load
-- [x] All 30 scenes registered — no duplicates
-- [x] `localStorage` read/write symmetry — every `getItem` key has a matching `setItem`
-- [x] Cross-scene state via `Phaser.Data.DataManager` registry — no global leaks
+- [x] Phaser 3.60.0 loads via CDN; browser-cached after first load
+- [x] All 30 scenes registered in `Phaser.Game` — no duplicates
+- [x] `localStorage` read/write symmetry — every `getItem` key has a `setItem`
+- [x] All state via `Phaser.Data.DataManager` registry — no global variable leaks
 - [x] Drip spawner timers cleaned up on wave clear / game over / stage clear
-- [x] Physics groups use `maxSize` to cap object creation
-- [x] Dead objects deactivated and pooled — not destroyed/recreated
+- [x] Physics groups use `maxSize` — no unbounded object creation
+- [x] Dead objects deactivated and pooled — not destroyed and recreated
 
 ---
 
-## 2. Game Flow (11)
+## 2. Game Flow (10 checks)
 
-- [x] FTUX gate: single click/tap fires — no double-gate
-- [x] Music plays immediately on FTUX load (no pre-click silence)
-- [x] FTUX controls card: shows keyboard layout on desktop, mobile layout on touch
-- [x] "A long time ago..." intro: 2.6s (was 6s)
-- [x] Logo zoom: 3.0s, 2s of full visibility before fade
-- [x] Crawl covers full Ketharan War arc — all 3 episodes, no EP I-only framing
-- [x] STARFALL logo has no episode subtitle — shared cleanly across all screens
-- [x] Callsign entry music continues from crawl (no stop/start gap)
-- [x] EP I Briefing scene shown after callsign, before difficulty select, greets pilot by name
-- [x] Episode completion tracked per episode (`sf_ep1_complete` etc.)
+- [x] FTUX gate: fires on first click or keypress — no double-gate
+- [x] Music plays immediately on FTUX screen load — no silence before gesture
+- [x] "A long time ago..." intro: 2.6s (fade in 0.6s → hold 1.4s → fade out 0.6s)
+- [x] Logo zoom: 3.0s with ~2s of full visibility before fade
+- [x] Story crawl covers full Ketharan War arc — all 3 episodes, not EP I only
+- [x] EP I Briefing screen shown after callsign entry, before difficulty select
+- [x] Music flows uninterrupted: FTUX → crawl → callsign → EP I briefing
+- [x] Pilot carousel: 6 pilots, cinematic slide, each shows ability + bio
+- [x] Episode completion tracked in `localStorage` (sf_ep1_complete etc.)
 - [x] SPACE-to-skip on crawl and boss dossier
 
 ---
 
-## 3. Mobile Touch Controls (6)
+## 3. Mobile & Touch (8 checks)
 
-- [x] EP I: virtual joystick (appears at touch origin on left half) + fire zone (right half)
-- [x] EP II: same joystick + fire zone — full touch parity with EP I
-- [x] EP III: joystick + fire zone + ◎ Sonar button (top right, dims when no charges)
-- [x] Joystick appears where player touches, not fixed to corner
-- [x] Fire zone highlights on contact; joystick knob clamps to radius
-- [x] HUD strip (y<60) excluded from joystick trigger area — no accidental activation
+- [x] EP I: drag-origin joystick on left half, tap-to-fire on right half
+- [x] EP II: identical joystick + fire touch system
+- [x] EP III: identical joystick + fire touch + sonar ◎ button (top right)
+- [x] Joystick appears at touch origin — not locked to a fixed position
+- [x] Joystick knob clamped to 46px radius — correct feel
+- [x] Fire zone highlights subtly on press — visual feedback
+- [x] Sonar button dims when charges are depleted (EP III)
+- [x] FTUX controls card detects touch device and shows mobile layout
 
 ---
 
-## 4. HUD (7)
+## 4. HUD (7 checks)
 
-- [x] Top strip: strict 2-row layout — no overlaps at any combo/wave state
-- [x] Row 1: avatar + name | score + combo inline | wave label
-- [x] Row 2: lives icons | enemies left | difficulty badge
-- [x] Combo baked into score text (`9,800 ×4`) — fixed 20px font, colour-coded
+- [x] Top strip: strict 2-row layout — no overlaps at any time
+- [x] Row 1: avatar + name (left) — score + combo inline (centre) — wave (right)
+- [x] Row 2: lives icons (left) — enemies left (centre) — difficulty (right)
+- [x] Combo baked into score text (`9,800 ×4`) — fixed 20px font, never overflows
+- [x] Score colour shifts: white (×1) → yellow (×2) → orange (×4/×8)
 - [x] Enemies left clears correctly when wave ends
-- [x] Boss HP bar replaces wave label during boss fights
-- [x] Bottom strip: SHD/HP bars left, AMMO bar right — no overlaps
+- [x] Bottom strip: SHD/HP bars (left) — AMMO bar (right) — no overlaps
 
 ---
 
-## 5. Pilot Carousel (5)
+## 5. Episode I — Desert Sector (8 checks)
 
-- [x] 6 pilots, one at a time, slides in from right
-- [x] Each card: large portrait, name, role, ⚡ ability label + description, bio
-- [x] Navigate: ◀ PREV / NEXT ▶ buttons + left/right arrow keys
-- [x] Dot indicator row shows current pilot (1 of 6)
-- [x] Confirm: button + ENTER + SPACE — flash animation then transition
-
----
-
-## 6. Episode I — Desert Sector (8)
-
-- [x] 3 combat waves + boss wave
+- [x] 3 combat waves + boss (W4)
 - [x] Kill targets: W1=25, W2=28, W3=30
-- [x] Drip spawner: top, side, centre-drop entries
-- [x] Finite ammo — NO AMMO warning when empty
-- [x] Supply tents every 16s, collected on overlap
-- [x] Wave 3 Miniboss (Viper Lieutenant)
-- [x] Boss Dossier card + 5s countdown
-- [x] Stage clear → EP II bridge + mechanic preview
+- [x] Drip spawner: top / side / centre-drop entry patterns
+- [x] Finite ammo — NO AMMO warning on empty
+- [x] Supply tents spawn every 16s, collected on ship overlap
+- [x] Wave 3 Miniboss spawns at 3s into wave
+- [x] Boss Dossier card with 5s countdown before Desert Viper
+- [x] Stage clear → EP II bridge with mechanic preview card
 
 ---
 
-## 7. Episode II — Ice Reach (8)
+## 6. Episode II — Ice Reach (8 checks)
 
-- [x] 3 combat waves + boss
-- [x] Thermal gauge: drains 4pts every 3s passively
-- [x] Freeze mines: 30% speed for 3s on contact
-- [x] Ice shards: multi-directional; large ones shatter into 2 on bullet hit
-- [x] Supply crates: every 22s, restore 35 ammo + 10 thermal
-- [x] Pilot swap offered after Wave 2
-- [x] Boss Transmission scene before The Glacier
-- [x] The Glacier: 3 sequential hangar bays, each triggers drone wave
+- [x] 3 combat waves + boss (Wave 3 = boss)
+- [x] Thermal gauge drains 4 pts every 3s passively; replaces shield
+- [x] Freeze mines slow ship to 30% speed for 3s on contact
+- [x] Ice shards spawn from all directions; large ones shatter into 2 on bullet hit
+- [x] Supply crates spawn every 22s, restore 35 ammo + 10 thermal
+- [x] Pilot swap offered after Wave 2 — PilotSwapScene launches
+- [x] Boss Transmission (Vreth taunt) before The Glacier fight
+- [x] The Glacier: 3 hangar bays destroyed sequentially, each triggers drone wave
 
 ---
 
-## 8. Episode III — The Veil (9)
+## 7. Episode III — The Veil (9 checks)
 
 - [x] 3 combat waves + boss
-- [x] Energy: 100 max, costs 2/shot, regens 3 per 500ms
-- [x] Sonar Pulse [Q]: 5 charges, reveals all for 3s, +1 on wave clear
-- [x] Phantom Scouts: alpha=0, flash 220ms on fire
-- [x] Shade Carriers: spawn 3 phantoms on death, wave target increments
-- [x] Void Rifts: gravitational pull, damage at <0.7r, ASTRA immune
-- [x] The Sovereign: alpha=0, bullets blocked until Sonar-revealed
-- [x] Boss reveals briefly when firing — reactive counter-attack possible
+- [x] Energy system: 100 max, costs 2 per shot, regens 3 per 500ms
+- [x] Sonar Pulse [Q]: 5 charges, reveals all + boss for 3s, +1 on wave clear
+- [x] Phantom Scouts: alpha=0, flash briefly on fire (220ms)
+- [x] Shade Carriers: spawn 3 phantom drones on death, wave target increments
+- [x] Void Rifts: pull + damage at <0.7× radius, ASTRA immune
+- [x] The Sovereign: alpha=0, bullets blocked without Sonar reveal
+- [x] Boss flashes briefly when shooting — player can react
 - [x] Stage clear: itch.io CTA + full FITZ debrief
 
 ---
 
-## 9. Audio (6)
+## 8. Audio (6 checks)
 
-- [x] Menu theme: D minor melody-first, plays FTUX → crawl → callsign → EP I briefing
-- [x] Game theme: driving F minor, all wave gameplay
-- [x] Boss theme: chromatic tension, all boss encounters
-- [x] Crawl theme: same D minor theme, layer-by-layer build
-- [x] AudioContext unlocked on first gesture — no silent first session
-- [x] Music continuous across scene transitions — no stop/start gaps
+- [x] Menu track: D minor melody-first theme, suspense and release
+- [x] Crawl version of menu track: builds layer by layer (melody → bass → pads → drums)
+- [x] Game track: driving upbeat theme across all 3 episodes
+- [x] Boss track: intense chromatic tension across all 3 boss fights
+- [x] AudioContext unlocked on first user gesture
+- [x] No music gaps between scene transitions in prelude sequence
 
 ---
 
-## 10. Persistence & Sharing (4)
+## 9. Persistence & Sharing (4 checks)
 
 - [x] High scores per episode (`sf_hi`, `sf_hi_ep2`, `sf_hi_ep3`)
-- [x] Run history per episode — last 5 runs
-- [x] Pilot name persists (`sf_pilot`)
+- [x] Run history per episode — last 5 runs with pilot, score, wave, difficulty
+- [x] Pilot name persists across sessions (`sf_pilot`)
 - [x] Copy Score button on all game over screens
 
 ---
 
-*Total: 72 checks — all passing, April 2026*
+## 10. Polish & UX (5 checks)
+
+- [x] STARFALL logo has no episode subtitle — shared cleanly across all screens
+- [x] Pilot carousel: cinematic single-pilot display, full info, slide animation
+- [x] EP I Briefing screen personalises with pilot name after callsign entry
+- [x] FITZ dialogue lines unique per wave and episode
+- [x] Boss dossier, transmission, and briefing scenes all skippable
+
+---
+
+*73 checks total — April 2026*
