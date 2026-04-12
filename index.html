@@ -852,26 +852,11 @@ class PreludeScene extends Phaser.Scene {
     }});
     this.input.keyboard.on('keydown',e=>this.onKey(e));
 
-    // FTUX gate
-    this._crawlStarted=false; this.phase='gate';
-    const gate=this.add.container(W/2,H/2).setDepth(98);
-    gate.add(this.add.rectangle(0,0,W,H,0x000000,0.95));
-    if(this.textures.exists('sf-logo')) gate.add(this.add.image(0,-148,'sf-logo').setScale(0.78));
-    else gate.add(this.add.text(0,-148,'STARFALL',{fontSize:'54px',fontFamily:'Arial',fontStyle:'bold',color:'#ffe866',stroke:'#000',strokeThickness:8}).setOrigin(.5));
-    gate.add(this.add.text(0,-64,'COMPLETE EDITION  ·  EPISODES I – III',{fontSize:'13px',fontFamily:'Courier New',color:'#cc8833',letterSpacing:3}).setOrigin(.5));
-    const pBtn=this.add.text(0,10,'▶  CLICK OR PRESS ANY KEY TO BEGIN  ◀',{fontSize:'14px',fontFamily:'Courier New',color:'#ffe866',stroke:'#000',strokeThickness:3}).setOrigin(.5);
-    gate.add(pBtn);
-    this.tweens.add({targets:pBtn,alpha:0.15,duration:550,yoyo:true,repeat:-1});
-    gate.add(this.add.text(0,52,'WASD move  ·  SPACE fire  ·  Q sonar (EP III)  ·  ESC pause',{fontSize:'11px',fontFamily:'Courier New',color:'#886644'}).setOrigin(.5));
-    const startCrawl=()=>{
-      if(this._crawlStarted)return; this._crawlStarted=true;
-      this.tweens.add({targets:gate,alpha:0,duration:600,onComplete:()=>gate.destroy()});
-      this.phase='intro'; this.phaseT=0;
-      this.time.delayedCall(200,()=>Music.play('crawl'));
-      Music.armAutoplay('crawl');
-    };
-    this.input.once('pointerdown',startCrawl);
-    this.input.keyboard.once('keydown',startCrawl);
+    // Crawl starts immediately — FTUXScene already handled the entry gate
+    this._crawlStarted=true;
+    this.phase='intro'; this.phaseT=0;
+    this.time.delayedCall(200,()=>Music.play('crawl'));
+    Music.armAutoplay('crawl');
   }
 
   onKey(e){
