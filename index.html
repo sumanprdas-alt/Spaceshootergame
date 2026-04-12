@@ -206,226 +206,136 @@ const Music={
 
   // -- Track definitions --
   _trackMenu(){
-    // HIGH ENERGY BANGER — 160 BPM, E minor, war chiptune
-    // Drums + bass hit immediately. No build-up. You are already at war.
+    // STARFALL THEME — D minor, 130 BPM, melody-first with suspense and release
+    // Hook rises D→A (tension), dips to D (brief release), climbs to C' (peak),
+    // resolves back. Same theme used in crawl — gives the game musical identity.
     const mg=this._mg(); if(!mg) return;
     const c=this._ctx(); if(!c) return;
+    const filt=this._filter('lowpass',4200,0.8,mg);
 
-    // ── MASTER FILTER — slight crunch ─────────────────────────────────
-    const filt=this._filter('lowpass',5500,1.2,mg);
+    // ── SUSTAIN PAD — D minor chord, thick detuned saws ──────────────────
+    // This alone creates the "something big is coming" feeling
+    [[147,0.026],[175,0.018],[220,0.015],[262,0.010]].forEach(([hz,vol],i)=>{
+      const g=c.createGain(); g.gain.value=vol; g.connect(mg);
+      const o=c.createOscillator(); o.type='sawtooth';
+      o.frequency.value=hz; o.detune.value=i%2===0?9:-9;
+      o.connect(g); o.start();
+      this._nodes.push(o,g);
+    });
 
-    // ── PUNCHY BASS — root E, driving quarter notes + passing tones ───
-    // 160 BPM, 16th-note grid = 640 note-BPM
-    // Bass pattern: E E E G  E E D E  A A A C  A A G A (× 2)
-    const bas=[
-      82,82,82,98,  82,82,73,82,  110,110,110,131,  110,110,98,110,
-      82,82,82,98,  82,82,73,82,  110,110,110,131,  110,110,98,110,
-    ];
-    this._pattern(bas,640,'sawtooth',0.13,mg);
+    // ── BASS — quarter-note root movement: D F A G ────────────────────────
+    // 130 BPM × 4 = 520 note-BPM for 16th-note grid
+    const bass=[147,0,0,0, 175,0,0,0, 220,0,0,0, 196,0,0,0,
+                147,0,0,0, 175,0,0,0, 220,0,0,0, 196,0,0,0];
+    this._pattern(bass,520,'triangle',0.14,mg);
 
-    // ── KICK DRUM — heavy hits on beats 1 and 3 ───────────────────────
-    // 4 beats per bar, kick on beat 1 and 3 = positions 0,8 per 16-step bar
-    const kick=[1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0].map(v=>v?55:0);
-    this._pattern(kick,640,'triangle',0.28,mg);
-
-    // ── SNARE — hits on beats 2 and 4 ────────────────────────────────
-    const snare=[0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0].map(v=>v?220:0);
-    this._pattern(snare,640,'square',0.10,mg);
-
-    // ── HIHAT — 8th notes for drive ───────────────────────────────────
-    const hat=[1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0].map(v=>v?880:0);
-    this._pattern(hat,640,'square',0.025,filt);
-
-    // ── LEAD RIFF — aggressive E minor melody, fast ───────────────────
-    // Plays in octave 4/5, punchy square wave
-    // E F# G A  B A G F#  E D E G  B 0 B A
+    // ── MAIN THEME — the hook. Singable, memorable, tense ────────────────
+    // D minor: D E F G A Bb C D
+    // Bar 1+2: D . F G | A . G . | F . F E | D . . .
+    // Bar 3+4: D . G A | C'. Bb A | G . . F | D . . .
     const mel=[
-      329,370,392,440,  494,440,392,370,  329,293,329,392,  494,0,494,440,
-      329,370,392,440,  494,440,392,370,  329,293,329,392,  494,0,0,0,
+      294,0,349,392,  440,0,392,0,  349,0,349,330,  294,0,0,0,
+      294,0,392,440,  523,0,466,440, 392,0,0,349,   294,0,0,0,
     ];
-    this._pattern(mel,640,'square',0.08,filt);
+    this._pattern(mel,520,'square',0.095,filt);
 
-    // ── POWER CHORD STABS — every 2 beats for crunch ─────────────────
-    // Root + 5th played together as sawtooth = instant power
-    const stab=[164,0,0,0, 0,0,0,0, 196,0,0,0, 0,0,0,0].map(v=>v);
-    this._pattern(stab,640,'sawtooth',0.10,mg);
-    // 5th of each (B and F#)
-    const stab5=[246,0,0,0, 0,0,0,0, 294,0,0,0, 0,0,0,0].map(v=>v);
-    this._pattern(stab5,640,'sawtooth',0.08,mg);
+    // ── COUNTER MELODY — higher register, answers the hook ────────────────
+    const ctr=[
+      0,0,0,523,  0,659,0,587,  0,0,523,0,  523,0,0,0,
+      0,0,0,587,  0,784,0,698,  587,0,0,523, 587,0,0,0,
+    ];
+    this._pattern(ctr,520,'square',0.036,filt);
 
-    // ── SUB BASS — one octave below for weight ────────────────────────
-    this._osc(41,'sine',0.10,mg);
+    // ── SOFT KICK — quiet, periodic. Rhythm without domination ───────────
+    const kick=[1,0,0,0,0,0,0,0, 1,0,0,0,0,0,0,0].map(v=>v?52:0);
+    this._pattern(kick,520,'triangle',0.18,mg);
+
+    // ── SHIMMER — eerie high overtones, sense of space ───────────────────
+    this._osc(588,'sine',0.008,mg);   // D5
+    this._osc(1174,'sine',0.006,filt); // Bb5 — slightly unresolved = tension
   },
-
-
   _trackCrawl(){
-    // STARFALL PRELUDE — 3-phase tempo escalation, already driving from bar 1
-    // Phase 1 (0-12s):  120 BPM — bass groove + dramatic melody. Moving immediately.
-    // Phase 2 (12-22s): 150 BPM — drums kick in, intensity spikes, melody tightens.
-    // Phase 3 (22s+):   160 BPM — full power, counter melody, wall of sound.
+    // STARFALL THEME — crawl arrangement. Same D minor hook, built layer by layer.
+    // 0-6s:   Melody alone. Stark. Like a single spotlight in space.
+    // 6-12s:  Bass enters. Theme repeats. Starts to feel inevitable.
+    // 12-18s: Pad chords swell in. Rich, tense, full of dread.
+    // 18s+:   Kick enters. Full band. Matches FTUX screen energy.
     const mg=this._mg(); if(!mg) return;
     const c=this._ctx(); if(!c) return;
     const T=c.currentTime;
+    const filt=this._filter('lowpass',4200,0.8,mg);
 
-    // Shared filter — slight warmth
-    const filt=this._filter('lowpass',4800,0.9,mg);
+    // BPM 130 — 8th note = 0.231s
+    const B=60/130, E=B/2;
 
-    // ── NOTE HELPER — fires a single note at absolute time ────────────
+    // note helper — fires one note at absolute time t
     const note=(hz,type,vol,t,dur)=>{
       if(!hz||!this.playing) return;
       const g=c.createGain();
       g.gain.setValueAtTime(0,t);
-      g.gain.linearRampToValueAtTime(vol,t+0.015);
+      g.gain.linearRampToValueAtTime(vol,t+0.02);
       g.gain.linearRampToValueAtTime(0,t+dur);
       g.connect(mg);
       const o=c.createOscillator(); o.type=type; o.frequency.value=hz;
-      o.connect(g); o.start(t); o.stop(t+dur+0.04);
+      o.connect(g); o.start(t); o.stop(t+dur+0.05);
       this._nodes.push(o,g);
     };
 
-    // ════════════════════════════════════════════════════════════════
-    // PHASE 1 — 120 BPM. Driving bass + heroic melody. No silence.
-    // ════════════════════════════════════════════════════════════════
-    const b1=60/120; // beat at 120 BPM = 0.5s
-    // Bass: A minor root movement, quarter notes
-    // A  A  A  C   A  G  A  E   F  F  F  A   F  E  F  C
-    const p1bass=[
-      [110,0],[110,0.5],[110,1],[131,1.5],
-      [110,2],[98,2.5],[110,3],[82,3.5],
-      [87,4],[87,4.5],[87,5],[110,5.5],
-      [87,6],[82,6.5],[87,7],[65,7.5],
-      [110,8],[110,8.5],[110,9],[131,9.5],
-      [110,10],[98,10.5],[110,11],[82,11.5],
+    // The STARFALL hook — 4 bars, 32 8th notes
+    // D.FG | A.G. | F.FE | D... | D.GA | C'.BbA | G..F | D...
+    const THM=[
+      [294,0],[349,2],[392,3],[440,4],[392,6],
+      [349,8],[349,10],[330,11],[294,12],
+      [294,16],[392,18],[440,19],[523,20],[466,22],[440,23],
+      [392,24],[349,27],[294,28],
+    ]; // offsets in 8th-note units
+
+    const ctrNotes=[
+      [523,1],[659,3],[587,5],[523,7],[523,12],
+      [587,17],[784,19],[698,21],[523,23],[587,28],
     ];
-    p1bass.forEach(([hz,t])=>note(hz,'sawtooth',0.14,T+t,b1*0.85));
 
-    // Heroic melody — A minor, bold intervals, 8th notes
-    // Enters at bar 1, strong from the start
-    const p1mel=[
-      [220,0,0.4],[0,0.5],[261,1,0.4],[293,1.5,0.4],
-      [329,2,0.8],[0,3],[329,3.5,0.3],[349,4,0.4],
-      [329,4.5,0.3],[293,5,0.4],[261,5.5,0.3],[247,6,0.8],
-      [220,7,0.4],[0,7.5],[247,8,0.4],[261,8.5,0.4],
-      [293,9,0.4],[329,9.5,0.4],[392,10,0.8],[0,11],
-      [329,11.5,0.4],[293,12,0.3],
-    ];
-    p1mel.forEach(([hz,t,dur])=>{ if(hz) note(hz,'square',0.09,T+t,dur); });
+    const bassNotes=[[147,0],[175,4],[220,8],[196,12],[147,16],[175,20],[220,24],[196,28]];
 
-    // Sub bass drone for weight
-    const subG=c.createGain(); subG.gain.setValueAtTime(0.07,T); subG.connect(mg);
-    const sub=c.createOscillator(); sub.type='sine'; sub.frequency.value=55;
-    sub.connect(subG); sub.start(T);
-    this._nodes.push(sub,subG);
-
-    // ════════════════════════════════════════════════════════════════
-    // PHASE 2 — Fires at 12s. 150 BPM. Drums kick in. Intensity spikes.
-    // ════════════════════════════════════════════════════════════════
-    const P2=T+12;
-    const b2=60/150;
-
-    // Kick on 1 & 3
-    for(let i=0;i<20;i++){
-      if(i%4===0||i%4===2) note(58,'triangle',0.25,P2+i*b2,b2*0.4);
-    }
-    // Snare on 2 & 4
-    for(let i=0;i<20;i++){
-      if(i%4===1||i%4===3) note(200,'square',0.10,P2+i*b2,b2*0.2);
-    }
-    // Faster bass — 8th notes now
-    const p2bass=[110,131,110,98, 110,87,98,110, 87,110,87,65, 87,98,87,65];
-    p2bass.forEach((hz,i)=>note(hz,'sawtooth',0.15,P2+i*b2*0.5,b2*0.45));
-    // Tighter melody — same theme but more urgent phrasing
-    const p2mel=[
-      [440,0,0.3],[493,0.4,0.2],[523,0.8,0.4],
-      [493,1.3,0.3],[440,1.7,0.2],[392,2.1,0.5],
-      [440,2.7,0.3],[493,3.1,0.2],[523,3.5,0.7],
-      [587,4.3,0.4],[523,4.8,0.3],[493,5.2,0.8],
-      [440,6.1,0.3],[493,6.5,0.2],[523,6.9,0.4],
-      [587,7.4,0.3],[659,7.8,0.3],[587,8.2,0.8],
-      [523,9.1,0.3],[493,9.5,0.2],[440,9.9,1.0],
-    ];
-    p2mel.forEach(([hz,t,dur])=>note(hz,'square',0.10,P2+t,dur));
-    // Pad swells in
-    [[220,0.022],[277,0.015]].forEach(([hz,vol],i)=>{
-      const g=c.createGain(); g.gain.setValueAtTime(0,P2); g.gain.linearRampToValueAtTime(vol,P2+4); g.connect(mg);
-      const o=c.createOscillator(); o.type='sawtooth'; o.frequency.value=hz; o.detune.value=i===0?5:-5;
-      o.connect(g); o.start(P2);
-      this._nodes.push(o,g);
-    });
-
-    // ════════════════════════════════════════════════════════════════
-    // PHASE 3 — Fires at 22s. 160 BPM. FULL POWER.
-    // ════════════════════════════════════════════════════════════════
-    const P3=T+22;
-    const b3=60/160;
-    const S3=60/160/4; // 16th note at 160 BPM
-
-    // Heavy kick + snare + 16th hihat
-    for(let i=0;i<64;i++){
-      if(i%16===0||i%16===8) note(52,'triangle',0.28,P3+i*S3,S3*3);
-      if(i%16===4||i%16===12) note(196,'square',0.12,P3+i*S3,S3*1.5);
-      if(i%2===0) note(880,'square',0.018,P3+i*S3,S3*0.8);
-    }
-    // Driving bass — 16th note groove
-    const p3bass=[
-      110,0,110,0, 131,0,110,0, 98,0,110,0, 131,0,98,0,
-      110,0,110,0, 131,0,110,0, 98,0,87,0,  98,0,110,0,
-    ];
-    p3bass.forEach((hz,i)=>{ if(hz) note(hz,'sawtooth',0.17,P3+i*S3,S3*1.8); });
-    // LEAD RIFF — the main hook, full force
-    const p3mel=[
-      [440,0,S3*3],[0,S3*4],[493,S3*5,S3*2],[523,S3*7,S3*2],
-      [587,S3*9,S3*4],[523,S3*13,S3*2],[493,S3*15,S3*2],
-      [440,S3*17,S3*2],[392,S3*19,S3*2],[440,S3*21,S3*2],[493,S3*23,S3*2],
-      [523,S3*25,S3*6],[0,S3*31],
-      [587,S3*32,S3*3],[659,S3*35,S3*2],[587,S3*37,S3*2],
-      [523,S3*39,S3*2],[493,S3*41,S3*2],[440,S3*43,S3*4],
-      [493,S3*47,S3*2],[523,S3*49,S3*2],[440,S3*51,S3*6],
-    ];
-    p3mel.forEach(([hz,t,dur])=>{ if(hz) note(hz,'square',0.11,P3+t,dur); });
-    // COUNTER MELODY — high register, off-beat for texture
-    const p3ctr=[
-      [880,S3*2,S3*2],[1047,S3*6,S3*2],[988,S3*10,S3*2],[880,S3*14,S3*2],
-      [1047,S3*18,S3*2],[1174,S3*22,S3*2],[1319,S3*26,S3*4],
-      [1047,S3*34,S3*2],[988,S3*38,S3*2],[880,S3*42,S3*4],
-      [988,S3*50,S3*2],[1047,S3*54,S3*4],
-    ];
-    p3ctr.forEach(([hz,t,dur])=>note(hz,'square',0.04,P3+t,dur));
-    // Power chord stabs every bar
-    for(let bar=0;bar<4;bar++){
-      note(220,'sawtooth',0.12,P3+bar*b3*4,b3*0.5);
-      note(330,'sawtooth',0.08,P3+bar*b3*4,b3*0.5);
-    }
-    // All string pads — instant full swell
-    [[220,0.025],[277,0.018],[330,0.014],[440,0.009]].forEach(([hz,vol],i)=>{
-      const g=c.createGain(); g.gain.setValueAtTime(0,P3); g.gain.linearRampToValueAtTime(vol,P3+2); g.connect(mg);
-      const o=c.createOscillator(); o.type='sawtooth'; o.frequency.value=hz; o.detune.value=i%2===0?6:-6;
-      o.connect(g); o.start(P3);
-      this._nodes.push(o,g);
-    });
-
-    // Loop Phase 3 after 4 bars (4 * 4 beats * b3)
-    const p3dur=(64*S3+0.5)*1000;
-    const loop3=()=>{
-      if(!this.playing||this.currentTrack!=='crawl') return;
-      const L=c.currentTime;
-      const LS=60/160/4;
-      for(let i=0;i<64;i++){
-        if(i%16===0||i%16===8) note(52,'triangle',0.28,L+i*LS,LS*3);
-        if(i%16===4||i%16===12) note(196,'square',0.12,L+i*LS,LS*1.5);
-        if(i%2===0) note(880,'square',0.018,L+i*LS,LS*0.8);
+    // Play one full 4-bar phrase (32 8th notes = ~14.8s at 130 BPM)
+    const phrase=(startT, volScale=1, withBass=false, withPad=false, withDrums=false)=>{
+      THM.forEach(([hz,i])=>note(hz,'square',0.10*volScale,startT+i*E,E*1.7));
+      if(withBass) bassNotes.forEach(([hz,i])=>note(hz,'sawtooth',0.14,startT+i*E,E*3.5));
+      if(withPad){
+        [[147,0.024],[175,0.016],[220,0.013],[262,0.009]].forEach(([hz,vol],idx)=>{
+          const g=c.createGain(); g.gain.setValueAtTime(0,startT);
+          g.gain.linearRampToValueAtTime(vol,startT+3); g.connect(mg);
+          const o=c.createOscillator(); o.type='sawtooth';
+          o.frequency.value=hz; o.detune.value=idx%2===0?9:-9;
+          o.connect(g); o.start(startT);
+          this._nodes.push(o,g);
+        });
+        ctrNotes.forEach(([hz,i])=>note(hz,'square',0.034,startT+i*E,E*1.5));
       }
-      p3bass.forEach((hz,i)=>{ if(hz) note(hz,'sawtooth',0.17,L+i*LS,LS*1.8); });
-      p3mel.forEach(([hz,t,dur])=>{ if(hz) note(hz,'square',0.11,L+t,dur); });
-      p3ctr.forEach(([hz,t,dur])=>note(hz,'square',0.04,L+t,dur));
+      if(withDrums){
+        for(let i=0;i<32;i++){
+          if(i%8===0||i%8===4) note(52,'triangle',0.20,startT+i*E,E*1.8);
+          if(i%8===2||i%8===6) note(196,'square',0.06,startT+i*E,E*0.7);
+        }
+      }
     };
-    const id1=setTimeout(loop3,p3dur);
-    const id2=setTimeout(loop3,p3dur*2);
-    const id3=setTimeout(loop3,p3dur*3);
-    this._nodes.push({stop:()=>{clearTimeout(id1);clearTimeout(id2);clearTimeout(id3);}});
+
+    const ph=32*E; // phrase duration in seconds (~14.77s)
+
+    phrase(T,           1.0, false, false, false); // Phase 1: melody alone
+    phrase(T+ph,        1.0, true,  false, false); // Phase 2: + bass
+    phrase(T+ph*2,      1.0, true,  true,  false); // Phase 3: + pad + counter
+    phrase(T+ph*3,      1.1, true,  true,  true);  // Phase 4: + drums (full)
+
+    // Loop phase 4 forever
+    const loopMs=ph*1000;
+    const ids=[
+      setTimeout(()=>phrase(c.currentTime,1.1,true,true,true), loopMs*4),
+      setTimeout(()=>phrase(c.currentTime,1.1,true,true,true), loopMs*5),
+      setTimeout(()=>phrase(c.currentTime,1.1,true,true,true), loopMs*6),
+    ];
+    this._nodes.push({stop:()=>ids.forEach(clearTimeout)});
   },
-
-
   _trackGame(){
     // Upbeat, driving, tense — F minor, fast
     const mg=this._mg(); if(!mg) return;
@@ -675,7 +585,7 @@ function buildStarfallLogo(w=440, h=110) {
   for(let dx = -4; dx <= 4; dx += 2)
     for(let dy = -4; dy <= 4; dy += 2)
       if(dx!==0||dy!==0)
-        ctx.fillText('STARFALL', w/2+dx, h/2-6+dy);
+        ctx.fillText('STARFALL', w/2+dx, h/2+dy);
 
   // Gold gradient fill
   const tg = ctx.createLinearGradient(0, h/2-42, 0, h/2+42);
@@ -684,25 +594,15 @@ function buildStarfallLogo(w=440, h=110) {
   tg.addColorStop(0.65,'#ff9900');
   tg.addColorStop(1,   '#cc5500');
   ctx.fillStyle = tg;
-  ctx.fillText('STARFALL', w/2, h/2-6);
+  ctx.fillText('STARFALL', w/2, h/2);
 
   // Chrome highlight stripe across upper third of letters
   ctx.globalAlpha = 0.22;
   ctx.fillStyle   = '#ffffff';
-  ctx.fillRect(0, h/2-42, w, 18);
+  ctx.fillRect(0, h/2-38, w, 18);
   ctx.globalAlpha = 1;
 
-  // ── Subtitle ────────────────────────────────────────────────────────────────
-  ctx.shadowBlur = 8; ctx.shadowColor = '#ff8800';
-  ctx.font       = 'bold 16px "Courier New", Courier, monospace';
-  const sg = ctx.createLinearGradient(0,0,w,0);
-  sg.addColorStop(0,   '#cc7700');
-  sg.addColorStop(0.5, '#ffcc44');
-  sg.addColorStop(1,   '#cc7700');
-  ctx.fillStyle  = sg;
-  ctx.letterSpacing = '6px';
-  ctx.fillText('✦  D E S E R T  S E C T O R  ✦', w/2, h-16);
-  ctx.letterSpacing = '0px';
+  // Subtitle removed — logo is shared across all episodes
 
   // ── Star sparkles ───────────────────────────────────────────────────────────
   ctx.shadowBlur = 4;
@@ -922,32 +822,31 @@ class PreludeScene extends Phaser.Scene {
       aside:{sz:21,color:'#ffcc55',stroke:4},
     };
     const LINES=[
-      {t:'shout',s:'EPISODE  I'},
-      {t:'shout',s:'ONE VERY BAD TUESDAY'},
+      {t:'shout',s:'THE KETHARAN WAR'},
       {t:'gap'},
-      {t:'body', s:'Year 2847. The Ketharan Dominion'},
-      {t:'body', s:'— a confederation of heavily-armed'},
-      {t:'body', s:'space jerks with a serious chip on'},
-      {t:'body', s:'their shoulder — has launched a'},
-      {t:'body', s:'surprise assault on the'},
-      {t:'body', s:'Desert Sector colonies.'},
+      {t:'body', s:'Year 2847. Without warning,'},
+      {t:'body', s:'the Ketharan Dominion struck'},
+      {t:'body', s:'three human sectors simultaneously.'},
       {t:'gap'},
-      {t:'body', s:"Earth's Rapid Response Corps"},
-      {t:'body', s:'dispatched THREE carrier groups.'},
-      {t:'body', s:'The Dominion sent considerably more.'},
-      {t:'body', s:'The carrier groups are gone.'},
-      {t:'aside',s:'(Whoops.)'},
+      {t:'body', s:'Desert. Ice. The Veil.'},
+      {t:'gap'},
+      {t:'body', s:"Earth's fleets were annihilated"},
+      {t:'body', s:'in under six hours.'},
+      {t:'aside',s:'(Six hours.)'},
       {t:'gap'},
       {t:'shout',s:'ONE PILOT REMAINS.'},
       {t:'gap'},
-      {t:'body', s:'Armed with one ship, a sarcastic nav'},
-      {t:'body', s:'AI named FITZ, and zero backup,'},
-      {t:'body', s:'you are ordered to breach the Viper'},
-      {t:'body', s:"fleet's perimeter and destroy their"},
-      {t:'body', s:'flagship before the sector falls.'},
+      {t:'body', s:'Armed with one ship and FITZ —'},
+      {t:'body', s:'a navigation AI with strong opinions'},
+      {t:'body', s:'and zero respect for authority —'},
+      {t:'body', s:'you are humanity\'s last move.'},
       {t:'gap'},
-      {t:'body', s:'HR calls it "a great opportunity."'},
-      {t:'aside',s:'(HR has been reported to FITZ.)'},
+      {t:'body', s:'Three sectors. Three bosses.'},
+      {t:'body', s:'One war to end.'},
+      {t:'gap'},
+      {t:'aside',s:'FITZ: "Statistically, this is'},
+      {t:'aside',s:'a terrible plan."'},
+      {t:'aside',s:'"Executing anyway."'},
       {t:'gap'},
       {t:'shout',s:'MAY YOUR SHIELDS HOLD.'},
       {t:'gap'},{t:'gap'},{t:'gap'},
@@ -1099,7 +998,7 @@ class PreludeScene extends Phaser.Scene {
     // Fade to dedicated callsign screen
     this.cameras.main.fadeOut(600,0,0,0);
     this.cameras.main.once('camerafadeoutcomplete',()=>{
-      Music.stop();
+      // Don't stop music — let it flow into callsign screen
       this.scene.start('CallsignEntry');
     });
   }
@@ -1110,9 +1009,9 @@ class PreludeScene extends Phaser.Scene {
 
     if(!this._crawlStarted) return;
     if(this.phase==='intro'){
-      if     (this.phaseT<1.5) this.introTxt.setAlpha(this.phaseT/1.5);
-      else if(this.phaseT<4.5) this.introTxt.setAlpha(1);
-      else if(this.phaseT<6.0) this.introTxt.setAlpha(1-(this.phaseT-4.5)/1.5);
+      if     (this.phaseT<0.6) this.introTxt.setAlpha(this.phaseT/0.6);
+      else if(this.phaseT<2.0) this.introTxt.setAlpha(1);
+      else if(this.phaseT<2.6) this.introTxt.setAlpha(1-(this.phaseT-2.0)/0.6);
       else { this.introTxt.setAlpha(0); this.phase='logo'; this.phaseT=0; }
       return;
     }
@@ -1120,11 +1019,11 @@ class PreludeScene extends Phaser.Scene {
     if(this.phase==='logo'){
       if(this.phaseT<0.06){
         this.logoMain.setAlpha(1).setScale(3.5); this.logoSub.setAlpha(1).setScale(3.5);
-      } else if(this.phaseT<2.2){
-        const ease=1-Math.pow(1-this.phaseT/2.2,3);
+      } else if(this.phaseT<3.0){
+        const ease=1-Math.pow(1-this.phaseT/3.0,3);
         const sc=Math.max(3.5-ease*3.45,0.05);
         this.logoMain.setScale(sc); this.logoSub.setScale(sc);
-        if(this.phaseT>1.7){const a=1-(this.phaseT-1.7)/0.5; this.logoMain.setAlpha(a); this.logoSub.setAlpha(a);}
+        if(this.phaseT>2.2){const a=1-(this.phaseT-2.2)/0.8; this.logoMain.setAlpha(a); this.logoSub.setAlpha(a);}
       } else {
         this.logoMain.setAlpha(0); this.logoSub.setAlpha(0);
         this.phase='crawl'; this.phaseT=0; this.scrollY=0;
@@ -1177,6 +1076,97 @@ class PreludeScene extends Phaser.Scene {
   }
 }
 
+// ── EP1 BRIEFING — after callsign, before EP1 difficulty select ───────────────
+// Dramatic mission card that names the pilot and sets the Desert Sector stage
+class Ep1BriefingScene extends Phaser.Scene {
+  constructor(){super('Ep1Briefing');}
+  create(){
+    Sfx.init();
+    const pilot=this.registry.get('pilotName')||'PILOT';
+    this.add.rectangle(W/2,H/2,W,H,0x000000,1);
+
+    // Desert star field — warm amber
+    const sg=this.add.graphics().setDepth(0);
+    for(let i=0;i<180;i++){
+      sg.fillStyle(0xffaa44,Math.random()*0.18+0.03);
+      sg.fillRect(Phaser.Math.Between(0,W),Phaser.Math.Between(0,H),Math.random()>0.8?2:1,1);
+    }
+
+    // ── TOP: episode badge slides in ─────────────────────────────────────
+    const badge=this.add.container(W/2,-100).setDepth(10);
+    badge.add(this.add.rectangle(0,0,W-40,70,0x0a0500,0.97).setStrokeStyle(2,0xff8800));
+    badge.add(this.add.text(0,-14,'EPISODE  I',{fontSize:'11px',fontFamily:'Courier New',
+      color:'#ff8800',letterSpacing:8,fontStyle:'bold',stroke:'#000',strokeThickness:2}).setOrigin(.5));
+    badge.add(this.add.text(0,10,'DESERT SECTOR',{fontSize:'26px',fontFamily:'Courier New',
+      color:'#ffcc44',fontStyle:'bold',stroke:'#000',strokeThickness:5}).setOrigin(.5));
+    this.tweens.add({targets:badge,y:66,duration:700,ease:'Back.easeOut',delay:200});
+
+    // ── CENTRE: mission card ──────────────────────────────────────────────
+    const card=this.add.container(W/2,H/2+20).setDepth(10).setAlpha(0);
+    card.add(this.add.rectangle(0,0,W-40,320,0x050200,0.97).setStrokeStyle(1.5,0xcc6600,0.7));
+
+    const lines=[
+      {y:-130, text:'MISSION BRIEFING', style:{fontSize:'12px',fontFamily:'Courier New',
+        color:'#ff8800',letterSpacing:4,fontStyle:'bold'}},
+      {y:-108, text:'─────────────────────────────', style:{fontSize:'10px',
+        fontFamily:'Courier New',color:'#442200'}},
+      {y:-84,  text:'PILOT: '+pilot, style:{fontSize:'20px',fontFamily:'Courier New',
+        color:'#ffffff',fontStyle:'bold',stroke:'#000',strokeThickness:4}},
+      {y:-56,  text:'OBJECTIVE: DESERT SECTOR', style:{fontSize:'13px',
+        fontFamily:'Courier New',color:'#ffaa44',letterSpacing:2}},
+      {y:-34,  text:'─────────────────────────────', style:{fontSize:'10px',
+        fontFamily:'Courier New',color:'#442200'}},
+      {y:-10,  text:'The Ketharan Viper fleet holds', style:{fontSize:'14px',
+        fontFamily:'Courier New',color:'#dddddd'}},
+      {y:12,   text:'the Desert Sector. Break through.', style:{fontSize:'14px',
+        fontFamily:'Courier New',color:'#dddddd'}},
+      {y:34,   text:'Destroy their flagship.', style:{fontSize:'14px',
+        fontFamily:'Courier New',color:'#dddddd'}},
+      {y:56,   text:'Do not come back without a win.', style:{fontSize:'14px',
+        fontFamily:'Courier New',color:'#dddddd'}},
+      {y:86,   text:'FITZ: "I\'ve run the numbers.', style:{fontSize:'12px',
+        fontFamily:'Courier New',color:'#44ddff'}},
+      {y:104,  text:'You\'re the best option we have.', style:{fontSize:'12px',
+        fontFamily:'Courier New',color:'#44ddff'}},
+      {y:122,  text:'That\'s either inspiring or terrifying."', style:{fontSize:'12px',
+        fontFamily:'Courier New',color:'#44ddff'}},
+    ];
+    lines.forEach(({y,text,style})=>
+      card.add(this.add.text(0,y,text,{...style,stroke:style.stroke||'#000',
+        strokeThickness:style.strokeThickness||2}).setOrigin(.5)));
+
+    // Animate card in after badge lands
+    this.tweens.add({targets:card,alpha:1,duration:500,delay:900});
+
+    // ── BOTTOM: pulsing CTA ───────────────────────────────────────────────
+    const cta=this.add.text(W/2,H-48,'▶  PRESS ANY KEY TO LAUNCH',
+      {fontSize:'14px',fontFamily:'Courier New',fontStyle:'bold',
+       color:'#ff8800',stroke:'#000',strokeThickness:3}).setOrigin(.5).setDepth(10).setAlpha(0);
+    this.tweens.add({targets:cta,alpha:1,duration:300,delay:1400,
+      onComplete:()=>this.tweens.add({targets:cta,alpha:0.25,duration:500,
+        yoyo:true,repeat:-1,ease:'Sine.easeInOut'})});
+
+    this.add.text(W/2,H-20,'Select difficulty on the next screen',
+      {fontSize:'10px',fontFamily:'Courier New',color:'#443322'}).setOrigin(.5).setDepth(10);
+
+    // Input — any key or click after 1s
+    this.time.delayedCall(1000,()=>{
+      const go=()=>{
+        Sfx.play('select');
+        this.cameras.main.fadeOut(400,0,0,0);
+        this.cameras.main.once('camerafadeoutcomplete',()=>
+          this.scene.start('DifficultySelect'));
+      };
+      this.input.once('pointerdown',go);
+      this.input.keyboard.once('keydown',go);
+    });
+
+    this.cameras.main.fadeIn(500,0,0,0);
+    if(!Music.playing) Music.play('menu');
+  }
+}
+
+
 // ── CALLSIGN ENTRY ────────────────────────────────────────────────────────────
 class CallsignEntryScene extends Phaser.Scene {
   constructor(){super('CallsignEntry');}
@@ -1198,8 +1188,8 @@ class CallsignEntryScene extends Phaser.Scene {
       this.add.image(W/2,164,'sf-logo').setScale(0.72);
     else
       this.add.text(W/2,148,'STARFALL',{fontSize:'48px',fontFamily:'Arial',fontStyle:'bold',color:'#ffe866'}).setOrigin(.5);
-    this.add.text(W/2,224,'DESERT SECTOR — EPISODE I',
-      {fontSize:'13px',fontFamily:'Arial',fontStyle:'bold',color:'#cc8833',letterSpacing:5}).setOrigin(.5);
+    this.add.text(W/2,224,'IDENTIFY YOURSELF, PILOT',
+      {fontSize:'13px',fontFamily:'Courier New',fontStyle:'bold',color:'#cc8833',letterSpacing:4}).setOrigin(.5);
 
     // Card
     this.add.rectangle(W/2,H/2+52,W-48,210,0x001122,0.97).setStrokeStyle(2,0x4466aa);
@@ -1230,7 +1220,9 @@ class CallsignEntryScene extends Phaser.Scene {
     }});
     this.input.keyboard.on('keydown',e=>this.onKey(e));
     this.cameras.main.fadeIn(400,0,0,0);
-    Music.play('menu');
+    // Keep music flowing from prelude/crawl — only restart if silent
+    if(!Music.playing) Music.play('menu');
+    Music.armAutoplay('menu');
     if(this.bg) this._bgT=0;
   }
 
@@ -1241,7 +1233,7 @@ class CallsignEntryScene extends Phaser.Scene {
         localStorage.setItem('sf_pilot',this.pilotName.trim().toUpperCase());
         Sfx.play('select');
         this.cameras.main.fadeOut(300,0,0,0);
-        this.cameras.main.once('camerafadeoutcomplete',()=>this.scene.start('DifficultySelect'));
+        this.cameras.main.once('camerafadeoutcomplete',()=>this.scene.start('Ep1Briefing'));
       }
     } else if(e.key==='Backspace'){
       this.pilotName=this.pilotName.slice(0,-1);
@@ -1334,102 +1326,217 @@ class DifficultySelectScene extends Phaser.Scene {
 // ── AVATAR SELECT ────────────────────────────────────────────────────────────
 class AvatarSelectScene extends Phaser.Scene {
   constructor(){super('AvatarSelect');}
+
   create(){
     Sfx.init();
+    // 6 pilots in the carousel (trim to first 6)
+    this._pilots=[0,1,2,3,4,5];
+    this._idx=0;          // current pilot index in _pilots
+    this._round=0;        // 0=first pass, 1=second pass, 2=show all
+    this._animating=false;
+    this._confirmed=false;
+
+    // Background
     this.add.rectangle(W/2,H/2,W,H,0x050e1c,1);
-    // Warm stars
     const sg=this.add.graphics().setDepth(0);
     for(let i=0;i<140;i++){
-      sg.fillStyle(0xffffff,Math.random()*0.4+0.08);
-      sg.fillRect(Phaser.Math.Between(0,W),Phaser.Math.Between(0,H),Math.random()>0.85?2:1,1);
+      sg.fillStyle(0xffffff,Math.random()*0.3+0.06);
+      sg.fillRect(Phaser.Math.Between(0,W),Phaser.Math.Between(0,H),
+        Math.random()>0.85?2:1,1);
     }
 
-    const pilot=this.registry.get('pilotName')||'PILOT';
-    const chosen=this.registry.get('avatarId')??0;
-
     // Header
-    this.add.rectangle(W/2,30,W,60,0x000d22,1).setDepth(1);
-    this.add.rectangle(W/2,60,W,1,0x334488,1).setDepth(1);
-    this.add.text(W/2,12,'CHOOSE YOUR PILOT, '+pilot,
-      {fontSize:'18px',fontFamily:'Courier New',color:'#ffffff',
-       fontStyle:'bold',stroke:'#000',strokeThickness:4}).setOrigin(.5).setDepth(2);
-    this.add.text(W/2,40,'Select a character to fly with',
-      {fontSize:'12px',fontFamily:'Courier New',color:'#6688aa'}).setOrigin(.5).setDepth(2);
+    this.add.rectangle(W/2,28,W,56,0x000d22,1).setDepth(2);
+    this.add.rectangle(W/2,56,W,1,0x334488,1).setDepth(2);
+    this._headerTxt=this.add.text(W/2,14,
+      'CHOOSE YOUR PILOT',
+      {fontSize:'18px',fontFamily:'Courier New',fontStyle:'bold',
+       color:'#ffffff',stroke:'#000',strokeThickness:4})
+      .setOrigin(.5,0).setDepth(3);
+    this._roundTxt=this.add.text(W/2,38,
+      'PILOT 1 OF 6',
+      {fontSize:'11px',fontFamily:'Courier New',color:'#446688',letterSpacing:2})
+      .setOrigin(.5,0).setDepth(3);
 
-    // 2×4 grid (2 columns wide, 4 rows tall) — much larger cells
-    const SZ=96, COLS=2, ROWS=4, HGAP=20, VGAP=12;
-    const totalW=COLS*(SZ+HGAP)-HGAP;
-    const startX=W/2-totalW/2+SZ/2;  // left column centre
-    const startY=90;
-    this.selected=chosen;
-    this.panels=[];
+    // Dot indicator row
+    this._dots=[];
+    for(let i=0;i<6;i++){
+      const d=this.add.circle(W/2-50+i*20, H-18, 5, 0x334466)
+        .setDepth(5).setStrokeStyle(1,0x4488cc);
+      this._dots.push(d);
+    }
 
-    AVATARS.forEach((av,i)=>{
-      const col=i%COLS, row=Math.floor(i/COLS);
-      const cx=startX+col*(SZ+HGAP);
-      const cy=startY+row*(SZ+VGAP+40)+SZ/2;
+    // Portrait container — slides in/out
+    this._card=this.add.container(W+W/2, H/2+10).setDepth(10);
+    this._buildCard();
 
-      const texKey='avs_'+i;
-      if(!this.textures.exists(texKey)) this.textures.addCanvas(texKey,getAvatarCanvas(i,SZ));
+    // Buttons
+    const btnY=H-52;
+    this._prevBtn=makeBtn(this, 54, btnY, '◀ PREV', '#446688',
+      ()=>this._navigate(-1), 90, 36);
+    this._nextBtn=makeBtn(this, W-54, btnY, 'NEXT ▶', '#446688',
+      ()=>this._navigate(1), 90, 36);
+    this._confirmBtn=makeBtn(this, W/2, btnY, '✓  SELECT PILOT', '#44ff88',
+      ()=>this._confirm(), 180, 42);
+    // Make confirm button more prominent
+    this._confirmBtn.txt.setStyle({fontSize:'15px',fontFamily:'Courier New',
+      fontStyle:'bold',color:'#44ff88',stroke:'#000',strokeThickness:4});
+    this.tweens.add({targets:this._confirmBtn.bg,
+      alpha:0.7,duration:600,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
 
-      const isChosen=i===chosen;
-      const bCol=isChosen?0x88ccff:0x334466;
-      const cell=this.add.rectangle(cx,cy,SZ+12,SZ+12,0x000d22,isChosen?1:0.85)
-        .setStrokeStyle(isChosen?3:1,bCol).setInteractive({useHandCursor:true}).setDepth(2);
+    // Keyboard nav
+    this.input.keyboard.on('keydown-RIGHT', ()=>this._navigate(1));
+    this.input.keyboard.on('keydown-LEFT',  ()=>this._navigate(-1));
+    this.input.keyboard.on('keydown-ENTER', ()=>this._confirm());
+    this.input.keyboard.on('keydown-SPACE', ()=>this._confirm());
 
-      const img=this.add.image(cx,cy,texKey).setDepth(3);
+    this.cameras.main.fadeIn(400,0,0,0);
+    // Slide first pilot in from right
+    this._slideIn('right');
+  }
 
-      // Name + role below avatar
-      const nameTx=this.add.text(cx,cy+SZ/2+6,av.name,
-        {fontSize:'14px',fontFamily:'Courier New',fontStyle:'bold',
-         color:isChosen?'#ffffff':'#aabbcc',stroke:'#000',strokeThickness:3})
-        .setOrigin(.5,0).setDepth(3);
-      const roleTx=this.add.text(cx,cy+SZ/2+24,av.role,
-        {fontSize:'10px',fontFamily:'Courier New',
-         color:isChosen?'#88ccff':'#445566',stroke:'#000',strokeThickness:2})
-        .setOrigin(.5,0).setDepth(3);
+  _buildCard(){
+    // Destroy existing card children
+    this._card.removeAll(true);
 
-      const check=this.add.text(cx+SZ/2,cy-SZ/2,'✓',
-        {fontSize:'18px',fontFamily:'Courier New',color:'#44ff88',stroke:'#000',strokeThickness:3})
-        .setOrigin(1,0).setDepth(4).setVisible(isChosen);
+    const avId=this._pilots[this._idx];
+    const av=AVATARS[avId];
+    const pas=PILOT_PASSIVES[avId];
+    const accentHex=av.accent;
+    const accentInt=parseInt(av.accent.replace('#','0x'));
 
-      cell.on('pointerover',()=>{ if(i!==this.selected){cell.setStrokeStyle(2,0x6699cc);nameTx.setColor('#ffffff');} Sfx.play('click'); });
-      cell.on('pointerout', ()=>{ if(i!==this.selected){cell.setStrokeStyle(1,0x334466);nameTx.setColor('#aabbcc');} });
-      cell.on('pointerdown',()=>this.selectAvatar(i));
-      this.panels.push({cell,nameTx,roleTx,check});
+    // Portrait — large 120px
+    const texKey='av_car_'+avId;
+    if(!this.textures.exists(texKey))
+      this.textures.addCanvas(texKey, getAvatarCanvas(avId,120));
+
+    // Card background
+    const cardW=W-32, cardH=340;
+    this._card.add(this.add.rectangle(0,0,cardW,cardH,0x000d22,0.96)
+      .setStrokeStyle(2,accentInt,0.8));
+
+    // Accent top stripe
+    this._card.add(this.add.rectangle(0,-cardH/2,cardW,6,accentInt,1)
+      .setOrigin(.5,0));
+
+    // Portrait left side
+    this._card.add(this.add.rectangle(-cardW/2+76,0,140,140,0x001133,0.9)
+      .setStrokeStyle(2,accentInt,0.6));
+    this._card.add(this.add.image(-cardW/2+76,0,texKey));
+
+    // Pilot name — big, bold
+    this._card.add(this.add.text(-cardW/2+158,-cardH/2+20, av.name,
+      {fontSize:'32px',fontFamily:'Courier New',fontStyle:'bold',
+       color:accentHex,stroke:'#000',strokeThickness:6})
+      .setOrigin(0,0));
+
+    // Role
+    this._card.add(this.add.text(-cardW/2+160,-cardH/2+58, av.role.toUpperCase(),
+      {fontSize:'12px',fontFamily:'Courier New',color:'#778899',letterSpacing:3})
+      .setOrigin(0,0));
+
+    // Divider
+    this._card.add(this.add.rectangle(cardW/2-16,-cardH/2+80,cardW-154,1,0x223344)
+      .setOrigin(1,0));
+
+    // Passive ability block
+    if(pas){
+      this._card.add(this.add.text(-cardW/2+158,-cardH/2+92,'SPECIAL ABILITY',
+        {fontSize:'10px',fontFamily:'Courier New',color:'#446688',letterSpacing:2})
+        .setOrigin(0,0));
+      this._card.add(this.add.text(-cardW/2+158,-cardH/2+108,'⚡ '+pas.label,
+        {fontSize:'16px',fontFamily:'Courier New',fontStyle:'bold',
+         color:'#ffdd44',stroke:'#000',strokeThickness:3})
+        .setOrigin(0,0));
+      this._card.add(this.add.text(-cardW/2+158,-cardH/2+132,pas.desc,
+        {fontSize:'13px',fontFamily:'Arial',color:'#aaddff',
+         stroke:'#000',strokeThickness:2})
+        .setOrigin(0,0));
+    }
+
+    // Flavour bio — short, punchy, personal
+    const bios={
+      0:'Fast reflexes. Prefers to stay moving. No one out-scouts NOVA.',
+      1:'Two confirmed kills before the war started. VEGA never misses.',
+      2:'Reads the battlefield before enemies know they are on it.',
+      3:'Keeps the ship running mid-fight. LYRA solves problems others cannot see.',
+      4:'Heaviest loadout in the corps. SIRIUS hits once and hits hard.',
+      5:'Vanishes before you can fire. ASTRA is already behind you.',
+    };
+    const bio=bios[avId]||'Ready for deployment.';
+    this._card.add(this.add.rectangle(0,cardH/2-90,cardW-24,1,0x223344)
+      .setOrigin(.5,0));
+    this._card.add(this.add.text(0,cardH/2-80,bio,
+      {fontSize:'13px',fontFamily:'Arial',color:'#889aaa',
+       align:'center',wordWrap:{width:cardW-40},stroke:'#000',strokeThickness:2})
+      .setOrigin(.5,0));
+  }
+
+  _updateDots(){
+    this._dots.forEach((d,i)=>{
+      const active=i===this._idx;
+      d.setFillStyle(active?0x44aaff:0x223344);
+      d.setScale(active?1.3:1);
     });
-
-    // Buttons at bottom
-    makeBtn(this,W/2+80,H-38,'CONFIRM  ▶','#88ff88',()=>this.confirm(),155,42);
-    makeBtn(this,W/2-80,H-38,'◀  BACK','#446688',()=>{
-      this.cameras.main.fadeOut(300,0,0,0);
-      this.cameras.main.once('camerafadeoutcomplete',()=>this.scene.start('DifficultySelect'));
-    },130,42);
-    this.add.text(W/2,H-12,'Your portrait will appear in the game HUD',
-      {fontSize:'11px',fontFamily:'Courier New',color:'#334455'}).setOrigin(.5).setDepth(5);
+    this._roundTxt.setText(
+      `PILOT ${this._idx+1} OF 6`
+    );
   }
 
-  selectAvatar(i){
+  _slideIn(from){
+    const startX = from==='right' ? W+W/2 : -W/2;
+    this._card.x=startX;
+    this._card.y=H/2+10;
+    this._buildCard();
+    this._updateDots();
+    this._animating=true;
+    this.tweens.add({
+      targets:this._card, x:W/2, duration:380,
+      ease:'Cubic.easeOut',
+      onComplete:()=>{ this._animating=false; }
+    });
+  }
+
+  _slideOut(to, then){
+    const endX = to==='right' ? W+W/2 : -W/2;
+    this._animating=true;
+    this.tweens.add({
+      targets:this._card, x:endX, duration:300,
+      ease:'Cubic.easeIn',
+      onComplete:()=>{ then(); }
+    });
+  }
+
+  _navigate(dir){
+    if(this._animating||this._confirmed) return;
+    Sfx.play('click');
+    this._slideOut(dir>0?'right':'left', ()=>{
+      this._idx=(this._idx+dir+6)%6;
+      this._slideIn(dir>0?'right':'left');  // enters from opposite side
+    });
+  }
+
+  _confirm(){
+    if(this._animating||this._confirmed) return;
+    this._confirmed=true;
+    const avId=this._pilots[this._idx];
+    this.registry.set('avatarId', avId);
     Sfx.play('select');
-    const old=this.panels[this.selected];
-    old.cell.setStrokeStyle(1,0x334466).setFillStyle(0x000d22,0.85);
-    old.nameTx.setColor('#aabbcc'); old.check.setVisible(false);
-    this.selected=i;
-    const cur=this.panels[i];
-    cur.cell.setStrokeStyle(3,0x88ccff).setFillStyle(0x000d22,1);
-    cur.nameTx.setColor('#ffffff'); cur.check.setVisible(true);
-  }
-
-  confirm(){
-    this.registry.set('avatarId',this.selected); Sfx.play('select');
-    this.cameras.main.fadeOut(400,0,0,0);
-    this.cameras.main.once('camerafadeoutcomplete',()=>
-      this.scene.start('Game',{wave:0,score:0,lives:3,shield:100,health:100,nextLifeAt:LIFE_EVERY}));
+    // Flash the card then transition
+    this.tweens.add({targets:this._card,alpha:0,duration:120,
+      yoyo:true,repeat:2,
+      onComplete:()=>{
+        this.cameras.main.fadeOut(400,0,0,0);
+        this.cameras.main.once('camerafadeoutcomplete',()=>
+          this.scene.start('Game',{
+            wave:0,score:0,lives:3,shield:100,health:100,nextLifeAt:LIFE_EVERY
+          }));
+      }
+    });
   }
 }
 
 
-// ── BOSS DOSSIER ─────────────────────────────────────────────────────────────
 class BossDossierScene extends Phaser.Scene {
   constructor(){super('BossDossier');}
   init(data){this.gameData=data;}
@@ -1789,34 +1896,52 @@ class GameScene extends Phaser.Scene {
 
   hud(){
     const D=50;
-    // ── Top strip: avatar+name left, score centre, wave/diff right ──────────
-    this.add.rectangle(W/2,22,W,44,0x000000,0.82).setDepth(D-1);
+    // ── Top strip: 56px, strict 2-row layout ─────────────────────────────────
+    // Row 1 (y=8):  [avatar] NAME  |  SCORE ×COMBO (centre)  |  WAVE
+    // Row 2 (y=34): [lives]        |  ENEMIES LEFT (centre)  |  [DIFF]
+    // Combo is baked into the score text — no separate element, no overflow
+    this.add.rectangle(W/2,28,W,56,0x000000,0.90).setDepth(D-1);
+    this.add.rectangle(W/2,56,W,1,0x223344,0.5).setDepth(D-1);
 
-    // Avatar portrait top-left (small, 36px)
+    // Avatar 40px
     const avId=this.registry.get('avatarId')??0;
     const avHudKey='av_top_'+avId;
-    if(!this.textures.exists(avHudKey)) this.textures.addCanvas(avHudKey,getAvatarCanvas(avId,36));
-    this.add.rectangle(20,22,38,38,0x001133,0.9).setStrokeStyle(1.5,0x4488cc).setDepth(D-1);
-    this.add.image(20,22,avHudKey).setDepth(D);
-    // Pilot name next to avatar
-    this.add.text(42,10,this.pilot,
-      {fontSize:'14px',fontFamily:'Arial',color:'#ffffff',
+    if(!this.textures.exists(avHudKey)) this.textures.addCanvas(avHudKey,getAvatarCanvas(avId,40));
+    this.add.rectangle(22,28,42,44,0x001133,0.9).setStrokeStyle(1.5,0x4488cc).setDepth(D-1);
+    this.add.image(22,28,avHudKey).setDepth(D);
+
+    // Row 1 left: pilot name
+    this.add.text(48,6,this.pilot,
+      {fontSize:'13px',fontFamily:'Arial',color:'#ffffff',
        fontStyle:'bold',stroke:'#000',strokeThickness:3}).setDepth(D);
-    // Lives as small ships below name
+    // Row 2 left: lives icons
     this.licons=[];
     for(let i=0;i<LIVES_MAX;i++){
-      const ic=this.add.sprite(44+i*20,28,'ship').setScale(.65).setDepth(D);
+      const ic=this.add.sprite(50+i*18,36,'ship').setScale(.58).setDepth(D);
       ic.play('ship'); this.licons.push(ic);
     }
-    this.stxt=this.add.text(W/2,4,'0',
-      {fontSize:'22px',fontFamily:'Arial',fontStyle:'bold',color:'#ffffff',stroke:'#000',strokeThickness:4}).setOrigin(.5,0).setDepth(D);
-    this.ctxt=this.add.text(W/2,28,'',
-      {fontSize:'14px',fontFamily:'Arial',fontStyle:'bold',color:'#ffdd44',stroke:'#000',strokeThickness:3}).setOrigin(.5,0).setDepth(D);
-    this.wtxt=this.add.text(W-8,6,'',
-      {fontSize:'13px',fontFamily:'Arial',fontStyle:'bold',color:'#aaddff',stroke:'#000',strokeThickness:3}).setOrigin(1,0).setDepth(D);
+
+    // Row 1 centre: score + combo in one text — fixed 20px, never changes size
+    this.stxt=this.add.text(W/2,5,'0',
+      {fontSize:'20px',fontFamily:'Arial',fontStyle:'bold',color:'#ffffff',
+       stroke:'#000',strokeThickness:4}).setOrigin(.5,0).setDepth(D);
+    // ctxt is now hidden — combo shown inline in stxt via uhud()
+    this.ctxt=this.add.text(0,-999,'').setDepth(D); // invisible, kept for compat
+
+    // Row 2 centre: enemies left — fixed small Courier text, never changes size
+    this.etxt=this.add.text(W/2,32,'',
+      {fontSize:'11px',fontFamily:'Courier New',color:'#ff9999',
+       stroke:'#000',strokeThickness:2}).setOrigin(.5,0).setDepth(D);
+
+    // Row 1 right: wave label
+    this.wtxt=this.add.text(W-8,5,'',
+      {fontSize:'12px',fontFamily:'Arial',fontStyle:'bold',color:'#aaddff',
+       stroke:'#000',strokeThickness:3}).setOrigin(1,0).setDepth(D);
+    // Row 2 right: difficulty badge
     const dk=this.registry.get('difficulty')||'VETERAN';
-    this.add.text(W-8,22,'['+dk+']',
-      {fontSize:'12px',fontFamily:'Arial',fontStyle:'bold',color:DIFF[dk].color,stroke:'#000',strokeThickness:2}).setOrigin(1,0).setDepth(D);
+    this.add.text(W-8,30,'['+dk+']',
+      {fontSize:'11px',fontFamily:'Arial',fontStyle:'bold',color:DIFF[dk].color,
+       stroke:'#000',strokeThickness:2}).setOrigin(1,0).setDepth(D);
 
     // ── Bottom strip: SHD/HP bars (no avatar here — it's at top now) ─────────
     this.add.rectangle(W/2,H-30,W,60,0x000000,0.82).setDepth(D-1);
@@ -1858,13 +1983,17 @@ class GameScene extends Phaser.Scene {
 
   uhud(){
     this.licons.forEach((ic,i)=>ic.setAlpha(i<this.lives?1:.15));
-    this.stxt.setText(this.score.toLocaleString());
     const m=([1,2,4,8])[Math.min(this.combo,3)];
-    this.ctxt.setText(this.combo>0?'×'+m+' COMBO':'');
-    if(this.ctxt){
-      const bigCombo=this.combo>=3;
-      this.ctxt.setStyle({fontSize:bigCombo?'24px':'14px',fontFamily:'Arial',fontStyle:'bold',
-        color:bigCombo?'#ffdd44':this.combo>=2?'#ffaa22':'#ffdd44',stroke:'#000',strokeThickness:bigCombo?5:3});
+    // Combo baked into score line — one text, fixed size, never overlaps
+    if(this.combo>0){
+      const comboCol=this.combo>=3?'#ff8800':this.combo>=2?'#ffaa22':'#ffdd44';
+      this.stxt.setText(this.score.toLocaleString()+'  ×'+m);
+      this.stxt.setStyle({fontSize:'20px',fontFamily:'Arial',fontStyle:'bold',
+        color:comboCol,stroke:'#000',strokeThickness:4});
+    } else {
+      this.stxt.setText(this.score.toLocaleString());
+      this.stxt.setStyle({fontSize:'20px',fontFamily:'Arial',fontStyle:'bold',
+        color:'#ffffff',stroke:'#000',strokeThickness:4});
     }
     this.sbar.width=Math.max(0,180*(this.shield/100));
     this.hbar.width=Math.max(0,180*(this.hp/100));
@@ -2942,7 +3071,7 @@ class Ep2PreludeScene extends Phaser.Scene {
     this.skipHint.setVisible(false);
     this.cameras.main.fadeOut(500,0,8,20);
     this.cameras.main.once('camerafadeoutcomplete',()=>{
-      Music.stop();
+      // Don't stop music — let it flow into callsign screen
       this.scene.start('CallsignEntry');
     });
   }
@@ -6416,7 +6545,7 @@ new Phaser.Game({
   physics:{default:'arcade',arcade:{gravity:{y:0},debug:false}},
   scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},
   scene:[
-    BootScene,FTUXScene,PreludeScene,CallsignEntryScene,DifficultySelectScene,
+    BootScene,FTUXScene,PreludeScene,Ep1BriefingScene,CallsignEntryScene,DifficultySelectScene,
     AvatarSelectScene,BossDossierScene,MainMenuScene,GameScene,PauseScene,GameOverScene,
     Ep2PreludeScene,DifficultySelect2Scene,AvatarSelect2Scene,
     BossTransmissionScene,PilotSwapScene,Game2Scene,Pause2Scene,GameOver2Scene,MainMenu2Scene,
