@@ -6,15 +6,21 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#000000">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>STARFALL — Complete Edition</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh;overflow:hidden}
-canvas{image-rendering:pixelated;image-rendering:crisp-edges}
+body{background:#000;display:flex;align-items:center;justify-content:center;min-height:100vh;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;}
+canvas{image-rendering:pixelated;image-rendering:crisp-edges;touch-action:none;}
+#game-container{touch-action:none;}
 </style>
 </head>
 <body>
+<script>
+// Prevent iOS Safari scroll bounce and context menu on game canvas
+document.addEventListener('touchmove', function(e){ e.preventDefault(); }, {passive:false});
+document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+</script>
 <div id="game-container" onclick="if(document.documentElement.requestFullscreen&&!document.fullscreenElement){document.documentElement.requestFullscreen().catch(()=>{})}"></div>
 <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
 <script>
@@ -1790,6 +1796,7 @@ class GameScene extends Phaser.Scene {
 
     // HUD pause/restart overlay buttons (always visible in-game)
     this.hudButtons();
+    this._setupTouch();
     // ── Onboarding tip — wave 1 only ──────────────────────────────────────────
     if(this.waveIdx===0) this._showTips([
       'WASD / Arrows — Move   |   SPACE — Fire',
@@ -3657,6 +3664,7 @@ class Game2Scene extends Phaser.Scene {
     }
     Music.play('game');
     this.hudButtons2();
+    this._setupTouch();
     // ── Onboarding tip — wave 1 only ──────────────────────────────────────────
     this._setupTouch();
     this._showOnboarding2();
@@ -6741,6 +6749,7 @@ function shareScore(ep,pilot,score,wave,diff,btn){
 new Phaser.Game({
   type:Phaser.AUTO, width:W, height:H, parent:'game-container',
   backgroundColor:'#000011', pixelArt:true, antialias:false,
+  input:{activePointers:3},
   physics:{default:'arcade',arcade:{gravity:{y:0},debug:false}},
   scale:{mode:Phaser.Scale.FIT,autoCenter:Phaser.Scale.CENTER_BOTH},
   scene:[
