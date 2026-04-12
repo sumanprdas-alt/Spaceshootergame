@@ -4,7 +4,6 @@ A three-episode vertical-scrolling shoot-em-up built with **Phaser 3** and **HTM
 Delivered as a single self-contained `.html` file — open it in any modern browser and play.  
 No installation, no server, no dependencies beyond the one-time Phaser CDN load.
 
-**Rated 9.00/10 by senior game designer and SVP evaluation.**
 
 ---
 
@@ -186,16 +185,6 @@ starfall/
 ├── README.md                  ← This file
 └── EVALS.md                   ← Full evaluation suite (63 checks, 100% passing)
 ```
-
----
-
-## Evaluation Results
-
-| Evaluator | Score | Status |
-|-----------|-------|--------|
-| Senior Game Designer (14 criteria) | **9.00/10** | ✓ Pass |
-| SVP Gaming (14 criteria) | **9.00/10** | ✓ Pass |
-| Automated eval suite | **63/63 (100%)** | ✓ Pass |
 
 ---
 
