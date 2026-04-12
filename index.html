@@ -904,7 +904,7 @@ class PreludeScene extends Phaser.Scene {
        stroke:'#000',strokeThickness:3,fontStyle:'bold'}).setOrigin(.5).setDepth(22);
 
     // Skip hint
-    this.skipHint=this.add.text(W/2,H-14,'[ SPACE ] Skip',
+    this.skipHint=this.add.text(W/2,H-14,'[ TAP or SPACE to skip ]',
       {fontSize:'13px',fontFamily:'Courier New',color:'#445566'}).setOrigin(.5).setDepth(25);
 
     // ── Name entry panel — bright, clean, breakthecode.tech style ──────────
@@ -962,6 +962,10 @@ class PreludeScene extends Phaser.Scene {
     this.phase='intro'; this.phaseT=0;
     this.time.delayedCall(200,()=>Music.play('menu'));
     Music.armAutoplay('menu');
+    // Mobile tap-to-skip — works on any tap anywhere on the crawl screen
+    this.input.on('pointerdown',()=>{
+      if(!this.nameMode) this.skipAll();
+    });
   }
 
   onKey(e){
@@ -3041,7 +3045,7 @@ class Ep2PreludeScene extends Phaser.Scene {
       vig.fillRect(0,H-54+i*3,W,3);
     }
 
-    this.skipHint=this.add.text(W/2,H-14,'[ SPACE ] Skip',
+    this.skipHint=this.add.text(W/2,H-14,'[ TAP or SPACE to skip ]',
       {fontSize:'13px',fontFamily:'Courier New',color:'#445566'}).setOrigin(.5).setDepth(25);
 
     // Crawl lines
@@ -3091,6 +3095,7 @@ class Ep2PreludeScene extends Phaser.Scene {
     this._totalCrawlH=worldY;
 
     this.input.keyboard.on('keydown',e=>{ if(e.code==='Space') this._skip(); });
+    this.input.on('pointerdown',()=>this._skip());
     // Try playing immediately; arm fallback for browsers that block autoplay
     this.time.delayedCall(200,()=>Music.play('menu'));
     Music.armAutoplay('menu');
@@ -5018,6 +5023,7 @@ class Ep3PreludeScene extends Phaser.Scene {
     this._totalCrawlH=worldY;
 
     this.input.keyboard.on('keydown',e=>{if(e.code==='Space')this._skip();});
+    this.input.on('pointerdown',()=>this._skip());
     this.time.delayedCall(200,()=>Music.play('menu'));
     Music.armAutoplay('menu');
   }
