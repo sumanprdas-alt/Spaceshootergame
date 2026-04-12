@@ -9,64 +9,59 @@ No installation. No server. No dependencies beyond the one-time Phaser CDN load.
 ## Play
 
 **Desktop:** Double-click `index.html`  
-**Mobile:** Open the deployed URL in any mobile browser  
-**Local server (for music):** `python3 -m http.server 8080` then visit `http://localhost:8080`
+**Mobile (iPhone/Android):** Open the deployed URL in Safari or Chrome  
+**Local server (for music):** `python3 -m http.server 8080` → `http://localhost:8080`
 
 ---
 
 ## Controls
 
-### Desktop (Keyboard)
+### Desktop
 
 | Input | Action |
 |-------|--------|
-| `WASD` or Arrow Keys | Move ship |
+| `WASD` or Arrow Keys | Move ship (8-directional) |
 | `SPACE` | Fire weapon |
-| `Q` | Sonar Pulse *(EP III only — reveals cloaked enemies)* |
+| `Q` | Sonar Pulse *(EP III — reveals cloaked enemies)* |
 | `ESC` | Pause / Resume |
-| `ENTER` | Confirm / advance screens |
+| `ENTER` | Confirm / advance |
 | `← →` | Navigate pilot carousel |
 | `1–4` | Select difficulty |
 
-### Mobile (Touch)
+### Mobile (iOS / Android)
 
 | Zone | Action |
 |------|--------|
-| Left half of screen | Drag anywhere — joystick appears at touch point |
-| Right half of screen | Tap or hold to fire continuously |
-| ◎ button (top right, EP III) | Sonar Pulse |
-| Bottom-right corner | Pause |
+| **Left half — drag** | Move ship. Joystick appears at your touch point. |
+| **Right half — tap/hold** | Fire continuously |
+| **◎ button (top right, EP III)** | Sonar Pulse |
+| **ESC / Pause** | Bottom-right corner button |
 
-> The FTUX screen automatically detects touch devices and shows the correct control diagram.
+> The FTUX screen auto-detects touch and shows the mobile control diagram.  
+> Tap anywhere on the crawl screen to skip it on mobile.  
+> Callsign entry uses a native HTML input — the iOS keyboard opens automatically.
 
 ---
 
 ## Game Flow
 
 ```
-[ STARFALL — Click / Tap to Begin ]
+[ STARFALL — Tap / Click to Begin ]
            ↓
-[ THE KETHARAN WAR — story crawl ]
+[ THE KETHARAN WAR — story crawl (tap to skip) ]
            ↓
-[ Enter Pilot Callsign ]
+[ Enter Pilot Callsign — native keyboard on mobile ]
            ↓
-[ Choose Your Pilot — carousel (6 pilots, 1 at a time) ]
+[ Choose Your Pilot — carousel, 6 pilots, 1 at a time ]
            ↓
-[ EPISODE I BRIEFING — mission context ]
+[ EPISODE I BRIEFING — mission context, named for your pilot ]
            ↓
 [ Select Difficulty ]
            ↓
-[ EP I: Desert Sector ]
-           ↓  Mission Complete
-[ EP II: Ice Reach ]
-           ↓  Mission Complete
-[ EP III: The Veil ]
-           ↓  Mission Complete
+[ EP I: Desert Sector → EP II: Ice Reach → EP III: The Veil ]
+           ↓
 [ Final score · FITZ debrief · itch.io CTA ]
 ```
-
-Each episode has its own mission complete screen with a bridge to the next.  
-Pilot name, avatar, difficulty, and episode completion badges persist via `localStorage`.
 
 ---
 
@@ -80,18 +75,17 @@ Pilot name, avatar, difficulty, and episode completion badges persist via `local
 - Finite ammo — fly over supply tents to restock
 - Wave 3: Miniboss Lieutenant escort
 - Boss Dossier briefing card before the fight
-- FITZ dialogue throughout
 
 ### Episode II — Ice Reach
 *The Dominion retreats to frozen outer colonies. The pursuit continues.*
 
-- Ice blue palette, aurora shimmer
+- Ice blue palette with aurora shimmer
 - 3 waves + boss: **The Glacier** (3 destructible hangar bays)
-- **Thermal gauge** — drains passively in the cold; replaces shield
+- **Thermal gauge** — drains passively in the cold
 - **Freeze Mines** — contact freezes ship to 30% speed for 3s
 - **Ice Shards** — fast hazards from all directions
 - **Supply Crates** — restore ammo + thermal
-- **Pilot Swap** — specialist reassignment offered after Wave 2
+- **Pilot Swap** — specialist reassignment after Wave 2
 - **Boss Transmission** — intercepted taunt before the fight
 
 ### Episode III — The Veil
@@ -103,20 +97,20 @@ Pilot name, avatar, difficulty, and episode completion badges persist via `local
 - **Sonar Pulse `[Q]`** — 5 charges; reveals all enemies for 3s
 - **Phantom Scouts** — invisible until they fire
 - **Shade Carriers** — drop 3 cloaked drones on death
-- **Void Rifts** — gravitational pull zones; damage at close range
+- **Void Rifts** — gravitational pull zones
 - **The Sovereign** — bullets blocked unless Sonar-revealed
 
 ---
 
 ## Pilot Roster
 
-Six pilots selectable via cinematic carousel — one pilot shown at a time, slides in from the side. Each card shows portrait, role, special ability, and flavour bio.
+Six pilots in a cinematic carousel — one shown at a time, slides in from the side. Each card shows portrait, role, special ability, and flavour bio.
 
 | Pilot | Role | Special Ability |
 |-------|------|----------------|
 | **NOVA** | Scout Pilot | +20–25% ship speed |
 | **VEGA** | Ace Fighter | 2× ammo / energy capacity |
-| **ORION** | Recon Expert | Early Warning / 2× Sonar reveal duration |
+| **ORION** | Recon Expert | Early Warning / 2× Sonar reveal |
 | **LYRA** | Combat Engineer | +25–30% bullet damage |
 | **SIRIUS** | Heavy Gunner | Full thermal start / 2× energy regen |
 | **ASTRA** | Stealth Raider | Freeze immune (EP II) / Void immune (EP III) |
@@ -138,8 +132,8 @@ Six pilots selectable via cinematic carousel — one pilot shown at a time, slid
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│ [portrait] PILOT   9,800 ×4         WAVE 1/4         │
-│ ♥ ♥ ♥ ♥ ♥      ENEMIES LEFT: 9    [VETERAN]         │
+│ [portrait] PILOT   9,800 ×4         WAVE 1/4         │  Row 1
+│ ♥ ♥ ♥ ♥ ♥      ENEMIES LEFT: 9    [VETERAN]         │  Row 2
 └──────────────────────────────────────────────────────┘
                     gameplay area
 ┌──────────────────────────────────────────────────────┐
@@ -148,7 +142,7 @@ Six pilots selectable via cinematic carousel — one pilot shown at a time, slid
 └──────────────────────────────────────────────────────┘
 ```
 
-Combo multiplier is shown inline with the score (`9,800 ×4`) — colour shifts white → yellow → orange as the multiplier increases (×2 / ×4 / ×8).
+Combo multiplier shown inline with score (`9,800 ×4`) — white → yellow → orange as multiplier grows.
 
 ---
 
@@ -158,27 +152,10 @@ Four synthesised Web Audio API tracks — no external files required:
 
 | Track | When it plays |
 |-------|--------------|
-| **Menu theme** | Title screen → story crawl → callsign → EP I briefing. D minor, melody-first, builds with the crawl. |
-| **Game theme** | All combat waves across all 3 episodes |
+| **Menu theme** | Title → crawl → callsign → EP I briefing. D minor, builds with the crawl. |
+| **Game theme** | All combat waves |
 | **Boss theme** | All boss encounters |
 | **Crawl theme** | EP II and III preludes |
-
-Music flows uninterrupted from the first click through the entire prelude sequence.
-
----
-
-## Scoring
-
-| Action | Points |
-|--------|--------|
-| Grunt / Drone | 100–130 |
-| Scout / Phantom | 200–280 |
-| Elite | 500–550 |
-| Shade Carrier | 600 |
-| Miniboss | 1,200 |
-| Boss | 2,000–3,000 |
-| Combo (no-damage streak) | ×2 / ×4 / ×8 |
-| Stage clear survival bonus | 500–800 + remaining stats |
 
 ---
 
@@ -190,13 +167,52 @@ Music flows uninterrupted from the first click through the entire prelude sequen
 | Renderer | WebGL (auto-fallback to Canvas 2D) |
 | Canvas | 480 × 720 px logical, `Phaser.Scale.FIT` |
 | Sprites | Procedurally generated — zero external art files |
-| Music | Web Audio API — 4 synthesised tracks |
-| SFX | Web Audio API — all effects synthesised at runtime |
+| Audio | Web Audio API — 4 synthesised tracks + full SFX |
 | Touch | Drag-origin joystick + tap-to-fire + EP3 sonar button |
+| Mobile input | Native HTML `<input>` for callsign entry (triggers iOS keyboard) |
 | Gamepad | Left stick move, RT/A fire |
 | Persistence | `localStorage` — scores, history, pilot name, episode flags |
+| iOS fixes | `activePointers:3`, `touch-action:none`, `user-scalable=no`, `viewport-fit:cover`, touchmove preventDefault |
 | File | Single `index.html` — ~460 KB |
 | Scenes | 30 Phaser scenes across 3 episodes |
+
+---
+
+## Mobile Testing
+
+**Chrome DevTools (quickest):**
+1. Open `index.html` in Chrome
+2. `F12` → Toggle Device Toolbar (`Ctrl+Shift+M`)
+3. Pick iPhone 12 or Pixel 5
+4. Touch events are fully simulated
+
+**Real device:**
+1. `python3 -m http.server 8080`
+2. Find your computer's local IP (e.g. `192.168.1.5`)
+3. On your phone: `http://192.168.1.5:8080`
+4. Both devices must be on the same WiFi
+
+---
+
+## Local Development
+
+```bash
+# Serve locally (needed for music)
+python3 -m http.server 8080
+# Visit http://localhost:8080
+```
+
+Edit `index.html` directly — no build tools required.
+
+---
+
+## Deployment
+
+| Platform | How |
+|----------|-----|
+| **Vercel** | Connect GitHub repo → auto-deploys on every push to `main` |
+| **GitHub Pages** | Settings → Pages → Deploy from branch → root `/` |
+| **itch.io** | Upload `index.html` as ZIP, Kind = HTML, viewport 480×720 |
 
 ---
 
@@ -204,39 +220,16 @@ Music flows uninterrupted from the first click through the entire prelude sequen
 
 ```
 starfall/
-├── index.html   ← Complete Edition (EP I + II + III) — the deliverable
-├── README.md    ← This file
-└── EVALS.md     ← Full evaluation suite
+├── index.html      ← Complete Edition (EP I + II + III)
+├── README.md       ← This file
+├── EVALS.md        ← Evaluation suite
+└── docs/
+    ├── starfall-prd.docx
+    ├── starfall-solutions.docx
+    ├── starfall-techstack.docx
+    ├── starfall-learnings.docx
+    └── starfall-evals.docx
 ```
-
----
-
-## Local Development
-
-No build tools required. Edit `index.html` directly in any text editor.
-
-```bash
-# Serve locally (needed for music file loading)
-python3 -m http.server 8080
-
-# Then open:
-http://localhost:8080
-```
-
-**Recommended dev setup:**
-- VS Code + Live Server extension (auto-reload on save)
-- Chrome DevTools — Performance tab for frame profiling
-- Chrome DevTools — Toggle Device Toolbar (`Ctrl+Shift+M`) for mobile simulation
-
----
-
-## Deployment
-
-The game is a single static HTML file — deploy anywhere:
-
-- **Vercel:** Connect GitHub repo → auto-deploys on every push to `main`
-- **GitHub Pages:** Enable in repo Settings → Pages → root `/`
-- **itch.io:** Upload `index.html` as a ZIP, set Kind = HTML, viewport 480×720
 
 ---
 
