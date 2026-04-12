@@ -206,34 +206,170 @@ const Music={
 
   // -- Track definitions --
   _trackMenu(){
-    // Bright, catchy, retro arcade riff — C major pentatonic
+    // Atmospheric space-ambient — calm, weighty, cinematic
+    // Fits the "one pilot, impossible odds" mood. No arcade chirps.
     const mg=this._mg(); if(!mg) return;
-    const c=this._ctx();
-    // Reverb-like send
-    const filt=this._filter('lowpass',3200,0.8,mg);
-    // Melody — square wave, medium pace
-    const mel=[523,659,784,1047,784,659,523,440,523,659,784,1047,880,784,659,523];
-    this._pattern(mel,220,'square',0.07,filt);
-    // Bass — lower octave sine
-    const bas=[131,165,196,262,196,165,131,110,131,165,196,262,220,196,165,131];
-    this._pattern(bas,220,'triangle',0.09,mg);
-    // Chord pad — slow pulse
-    this._osc(261,'sawtooth',0.018,mg); this._osc(329,'sawtooth',0.012,mg); this._osc(392,'sawtooth',0.010,mg);
-    // Arpeggiated high notes
-    const hi=[2093,2637,3136,2093,2637,3136,2093,2637];
-    this._pattern(hi,440,'square',0.025,mg);
+    const c=this._ctx(); if(!c) return;
+
+    // ── Deep space drone — two detuned saws, slowly breathe ──────────────
+    [[55,7],[55,-7],[82,4]].forEach(([hz,det])=>{
+      const g=c.createGain(); g.gain.value=0.022; g.connect(mg);
+      const o=c.createOscillator(); o.type='sawtooth';
+      o.frequency.value=hz; o.detune.value=det;
+      o.connect(g); o.start();
+      this._nodes.push(o,g);
+    });
+
+    // ── Slow chord pulse — D minor feel (D F A) ───────────────────────────
+    // Pads swell every ~4s: gives a sense of breathing, not looping
+    [[147,0.014],[175,0.010],[220,0.008],[262,0.006]].forEach(([hz,vol],i)=>{
+      const g=c.createGain(); g.gain.value=vol; g.connect(mg);
+      const o=c.createOscillator(); o.type='sawtooth';
+      o.frequency.value=hz; o.detune.value=i%2===0?5:-5;
+      o.connect(g); o.start();
+      // Slow LFO-like volume wave — each at different phase
+      const lfoRate=0.18+i*0.03;
+      const lfoDepth=vol*0.35;
+      const lfoFn=()=>{
+        if(!this.playing) return;
+        const t=c.currentTime;
+        g.gain.setValueAtTime(vol,t);
+        g.gain.linearRampToValueAtTime(vol+lfoDepth,t+1/lfoRate/2);
+        g.gain.linearRampToValueAtTime(vol,t+1/lfoRate);
+        setTimeout(lfoFn, (1/lfoRate)*1000);
+      };
+      lfoFn();
+      this._nodes.push(o,g);
+    });
+
+    // ── Slow melodic theme — single notes, wide spacing, heroic ──────────
+    // D minor: D E F G A — melancholy but forward-looking
+    // Plays at 52 BPM — one note every ~1.15s, very deliberate
+    const theme=[294,0,0, 330,0,0, 349,0,0, 392,0,0, 440,0,0,0,
+                 392,0,0, 349,0,0, 330,0,0, 294,0,0,0,0,0];
+    const mFilt=this._filter('lowpass',900,0.5,mg);
+    this._pattern(theme,52,'square',0.045,mFilt);
+
+    // ── Sub bass heartbeat — very quiet, subliminal tension ───────────────
+    const pulse=[73,0,0,0,0,0,0,0];
+    this._pattern(pulse,44,'sine',0.08,mg);
+
+    // ── High shimmer — sparse, like distant stars ─────────────────────────
+    const shimmer=[587,0,0,0,0,0,659,0,0,0,0,0,0,0,0,0];
+    this._pattern(shimmer,66,'sine',0.018,mg);
   },
 
   _trackCrawl(){
-    // Slow, dramatic, mysterious — minor feel
+    // STARFALL PRELUDE — genuine 3-phase tempo build
+    // Phase 1 (0–7s):   silence + single bass hits. Empty, ominous.
+    // Phase 2 (7–14s):  bass doubles. Low melody creeps in. Tension rising.
+    // Phase 3 (14s+):   full arrangement. Drums, melody, strings, counter. Epic.
     const mg=this._mg(); if(!mg) return;
-    const filt=this._filter('lowpass',1800,1.2,mg);
-    const mel=[220,247,261,293,261,247,220,196,220,247,261,293,261,247,261,220];
-    this._pattern(mel,100,'sawtooth',0.055,filt);
-    const bas=[55,62,65,73,65,62,55,49,55,62,65,73,65,62,65,55];
-    this._pattern(bas,100,'triangle',0.09,mg);
-    // Slow swelling pad
-    this._osc(110,'sawtooth',0.018,mg); this._osc(138,'sawtooth',0.012,mg);
+    const c=this._ctx(); if(!c) return;
+    const T=c.currentTime; // anchor
+
+    // helper — schedules a single note burst at absolute time t
+    const note=(hz,type,vol,t,dur)=>{
+      if(!hz||!this.playing) return;
+      const g=c.createGain();
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(vol,t+0.02);
+      g.gain.linearRampToValueAtTime(0,t+dur);
+      g.connect(mg);
+      const o=c.createOscillator(); o.type=type; o.frequency.value=hz;
+      o.connect(g); o.start(t); o.stop(t+dur+0.05);
+      this._nodes.push(o,g);
+    };
+
+    // ── PHASE 1: One bass hit every 2 seconds. Nothing else. ─────────────
+    // Creates expectation. The silence IS the tension.
+    [0,2,4,6].forEach(t=>{ note(55,'triangle',0.18,T+t,0.8); });
+    // Single low shimmer at 4s — barely audible
+    note(110,'sine',0.03,T+4,3);
+
+    // ── PHASE 2 (starts 7s in): Bass doubles + slow melody ────────────────
+    // Bass hits every 1s now — tempo has doubled
+    [7,8,9,10,11,12,13].forEach((t,i)=>{
+      const hz=i%4===0?55:i%4===1?62:i%4===2?65:62;
+      note(hz,'triangle',0.16,T+t,0.6);
+    });
+    // Low haunting melody — just 3 notes, slowly
+    const p2mel=[[220,7.5,1.2],[247,9.5,1.2],[261,11.5,1.2],[247,13,0.9]];
+    p2mel.forEach(([hz,t,dur])=>note(hz,'square',0.055,T+t,dur));
+    // Rising pad swells in under the bass
+    [[110,0.02],[138,0.014]].forEach(([hz,vol],i)=>{
+      const g=c.createGain(); g.gain.setValueAtTime(0,T+7); g.gain.linearRampToValueAtTime(vol,T+13); g.connect(mg);
+      const o=c.createOscillator(); o.type='sawtooth'; o.frequency.value=hz; o.detune.value=i===0?6:-6;
+      o.connect(g); o.start(T+7);
+      this._nodes.push(o,g);
+    });
+
+    // ── PHASE 3 (starts 14s in): Full arrangement hits ────────────────────
+    // Everything launches at once — maximum contrast from the sparse intro.
+    // Drum pattern via scheduled notes
+    const BPM=108, beat=60/BPM; // ~0.555s per beat
+    const drumStart=T+14;
+    // Kick on 1 and 3
+    for(let b=0;b<32;b++){
+      if(b%4===0||b%4===2) note(58,'triangle',0.22,drumStart+b*beat,beat*0.5);
+      // Snare accent on 2 and 4 — higher pitch triangle
+      if(b%4===1||b%4===3) note(146,'sine',0.08,drumStart+b*beat,beat*0.25);
+    }
+    // Running bass line — A minor root movement
+    const bassLine=[110,110,110,110, 98,98,98,98, 131,131,131,131, 110,110,110,110];
+    const bassStart=T+14;
+    bassLine.forEach((hz,i)=>note(hz,'triangle',0.18,bassStart+i*beat,beat*0.85));
+    // Repeating bass (loops after 16 beats)
+    bassLine.forEach((hz,i)=>note(hz,'triangle',0.18,bassStart+(i+16)*beat,beat*0.85));
+
+    // Main melody — A minor, dramatic 8-note phrase
+    const melNotes=[
+      [220,0],[0,0.5],[261,1],[293,1.5],
+      [329,2.5],[293,3],[261,3.5],[247,4],
+      [220,4.5],[0,5],[196,5.5],[220,6],
+      [247,7],[261,7.5],[293,8],[329,9],
+      [349,10],[329,10.5],[293,11],[261,11.5],
+      [247,12],[220,12.5],[196,13],[220,14],
+      [247,14.5],[261,15],[293,15.5],[329,16],
+    ];
+    const melStart=T+14;
+    melNotes.forEach(([hz,offset])=>{ if(hz) note(hz,'square',0.075,melStart+offset,beat*1.2); });
+
+    // Counter melody — higher register, off-beat
+    const ctrNotes=[[440,1],[523,3],[493,5],[440,7],[523,9],[587,11],[659,13],[523,15]];
+    ctrNotes.forEach(([hz,offset])=>note(hz,'square',0.035,T+14+offset*beat/2,beat));
+
+    // String pad — all 4 layers come in together at 14s
+    [[110,0.022],[138,0.015],[165,0.011],[184,0.008]].forEach(([hz,vol],i)=>{
+      const g=c.createGain(); g.gain.setValueAtTime(0,T+14); g.gain.linearRampToValueAtTime(vol,T+17); g.connect(mg);
+      const o=c.createOscillator(); o.type='sawtooth'; o.frequency.value=hz; o.detune.value=i%2===0?6:-6;
+      o.connect(g); o.start(T+14);
+      this._nodes.push(o,g);
+    });
+
+    // Looping engine — restart Phase 3 after 32 beats so it never dies
+    const phase3Duration=(32*beat+1)*1000;
+    const restartPhase3=()=>{
+      if(!this.playing||this.currentTrack!=='crawl') return;
+      // Re-trigger bass + melody loop (not the intro — stay at full energy)
+      const T2=c.currentTime;
+      bassLine.forEach((hz,i)=>note(hz,'triangle',0.18,T2+i*beat,beat*0.85));
+      bassLine.forEach((hz,i)=>note(hz,'triangle',0.18,T2+(i+16)*beat,beat*0.85));
+      melNotes.forEach(([hz,offset])=>{ if(hz) note(hz,'square',0.075,T2+offset,beat*1.2); });
+      ctrNotes.forEach(([hz,offset])=>note(hz,'square',0.035,T2+offset*beat/2,beat));
+      for(let b=0;b<32;b++){
+        if(b%4===0||b%4===2) note(58,'triangle',0.22,T2+b*beat,beat*0.5);
+        if(b%4===1||b%4===3) note(146,'sine',0.08,T2+b*beat,beat*0.25);
+      }
+      this._nodes.push({stop:()=>{}});
+    };
+    // Schedule first loop repeat
+    const loopId=setTimeout(restartPhase3, phase3Duration);
+    // Second loop
+    const loopId2=setTimeout(restartPhase3, phase3Duration*2);
+    // Third loop (by now player is usually in game)
+    const loopId3=setTimeout(restartPhase3, phase3Duration*3);
+    this._nodes.push({stop:()=>{clearTimeout(loopId);clearTimeout(loopId2);clearTimeout(loopId3);}});
   },
 
   _trackGame(){
@@ -1652,7 +1788,7 @@ class GameScene extends Phaser.Scene {
     this.atxt=this.add.text(ax+44+aw+4,H-44,'',{fontSize:'12px',fontFamily:'Arial',fontStyle:'bold',color:'#ffcc44',stroke:'#000',strokeThickness:2}).setOrigin(0,.5).setDepth(D);
 
     // ── Wave enemy count (right side, below wave label) ─────────────────────
-    this.etxt=this.add.text(W/2,6,'',{fontSize:'12px',fontFamily:'Arial',fontStyle:'bold',color:'#ff8888',stroke:'#000',strokeThickness:2}).setOrigin(.5,0).setDepth(D);
+    this.etxt=this.add.text(W/2,28,'',{fontSize:'11px',fontFamily:'Courier New',color:'#ff8888',stroke:'#000',strokeThickness:2}).setOrigin(.5,0).setDepth(D);
 
     // Boss HP bar (top centre)
     this.bbc=this.add.container(0,0).setDepth(D).setVisible(false);
@@ -3404,7 +3540,7 @@ class Game2Scene extends Phaser.Scene {
     // Freeze indicator
     this.ftxt=this.add.text(W/2,H-16,'',{fontSize:'13px',fontFamily:'Courier New',color:'#88ddff',fontStyle:'bold',stroke:'#000',strokeThickness:3}).setOrigin(.5,1).setDepth(D);
     // Enemy count
-    this.etxt=this.add.text(W/2,6,'',{fontSize:'12px',fontFamily:'Arial',fontStyle:'bold',color:'#ff8888',stroke:'#000',strokeThickness:2}).setOrigin(.5,0).setDepth(D);
+    this.etxt=this.add.text(W/2,28,'',{fontSize:'11px',fontFamily:'Courier New',color:'#ff8888',stroke:'#000',strokeThickness:2}).setOrigin(.5,0).setDepth(D);
     // Boss bar
     this.bbc=this.add.container(0,0).setDepth(D).setVisible(false);
     this.bbbg=this.add.rectangle(W/2,60,W-60,16,0x001122).setOrigin(.5);
@@ -5063,7 +5199,7 @@ class Game3Scene extends Phaser.Scene {
       this.add.text(sx+4+i*30,H-30,'◆',{fontSize:'11px',fontFamily:'Arial',color:'#ffffff',stroke:'#000',strokeThickness:1}).setOrigin(.5).setDepth(D+2);
     }
     // Enemy counter
-    this.etxt=this.add.text(W/2,6,'',{fontSize:'12px',fontFamily:'Arial',fontStyle:'bold',color:'#cc88ff',stroke:'#000',strokeThickness:2}).setOrigin(.5,0).setDepth(D);
+    this.etxt=this.add.text(W/2,28,'',{fontSize:'11px',fontFamily:'Courier New',color:'#cc88ff',stroke:'#000',strokeThickness:2}).setOrigin(.5,0).setDepth(D);
     // Boss bar
     this.bbc=this.add.container(0,0).setDepth(D).setVisible(false);
     this.bbbg=this.add.rectangle(W/2,60,W-60,16,0x110022).setOrigin(.5);
