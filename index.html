@@ -719,7 +719,13 @@ class FTUXScene extends Phaser.Scene {
     this.add.text(W/2,248,'HOW TO PLAY',
       {fontSize:'12px',fontFamily:'Courier New',color:accentHex,letterSpacing:3}).setOrigin(.5);
 
-    const controls = [
+    const isMobile=this.sys.game.device.input.touch;
+    const controls = isMobile ? [
+      ['LEFT HALF',  'Drag to move ship'],
+      ['RIGHT HALF', 'Tap / hold to fire'],
+      ...(isEp3?[['◎ BUTTON','Sonar Pulse (top right)']]:[]),
+      ['ESC / PAUSE','Bottom right corner'],
+    ] : [
       ['WASD / ARROWS', 'Move ship'],
       ['SPACE',         'Fire weapon'],
       ...(isEp3?[['Q','Sonar Pulse — reveals cloaked enemies']]:[]),
@@ -1818,57 +1824,79 @@ class GameScene extends Phaser.Scene {
 
   _setupTouch(){
     if(!this.sys.game.device.input.touch) return;
-    this._touchMove={x:0,y:0,active:false,id:null};
+    this._tm={active:false,id:null,sx:0,sy:0,dx:0,dy:0};
     this._touchFire=false;
-    const MID=W/2;
+    this._speedMult=this._speedMult||1;
+
+    const joyR=46;
+    this._joyBase=this.add.circle(W/4,H-90,joyR,0xffffff,0.07)
+      .setDepth(95).setStrokeStyle(2,0xffffff,0.18).setVisible(false);
+    this._joyKnob=this.add.circle(W/4,H-90,22,0xffaa22,0.28)
+      .setDepth(96).setVisible(false);
+    this.add.text(W/4,H-38,'MOVE',
+      {fontSize:'10px',fontFamily:'Courier New',color:'rgba(255,200,100,0.35)'})
+      .setOrigin(.5).setDepth(95);
+
+    this._fireZone=this.add.rectangle(W*3/4,H/2,W/2,H,0xffaa22,0)
+      .setDepth(94).setInteractive();
+    this.add.text(W*3/4,H-38,'TAP TO FIRE',
+      {fontSize:'10px',fontFamily:'Courier New',color:'rgba(255,170,34,0.4)'})
+      .setOrigin(.5).setDepth(95);
 
     this.input.on('pointerdown',(p)=>{
-      if(p.x<MID){
-        this._touchMove={x:p.x,y:p.y,active:true,id:p.id,sx:p.x,sy:p.y};
+      if(p.y<60) return;
+      if(p.x<W/2){
+        this._tm={active:true,id:p.id,sx:p.x,sy:p.y,dx:0,dy:0};
+        this._joyBase.setPosition(p.x,p.y).setVisible(true);
+        this._joyKnob.setPosition(p.x,p.y).setVisible(true);
       } else {
         this._touchFire=true;
-        // Draw fire indicator
-        if(!this._fireDot) this._fireDot=this.add.circle(p.x,p.y,18,0xffaa22,0.35).setDepth(95);
+        this._fireZone.setFillStyle(0xffaa22,0.06);
       }
     });
     this.input.on('pointermove',(p)=>{
-      if(this._touchMove.active&&p.id===this._touchMove.id){
-        this._touchMove.dx=p.x-this._touchMove.sx;
-        this._touchMove.dy=p.y-this._touchMove.sy;
-      }
+      if(!this._tm.active||p.id!==this._tm.id) return;
+      this._tm.dx=p.x-this._tm.sx;
+      this._tm.dy=p.y-this._tm.sy;
+      const dist=Math.sqrt(this._tm.dx**2+this._tm.dy**2);
+      const clamp=Math.min(dist,joyR);
+      const nx=dist>0?this._tm.dx/dist:0, ny=dist>0?this._tm.dy/dist:0;
+      this._joyKnob.setPosition(this._tm.sx+nx*clamp, this._tm.sy+ny*clamp);
     });
     this.input.on('pointerup',(p)=>{
-      if(p.id===this._touchMove.id){this._touchMove.active=false;this._touchMove.dx=0;this._touchMove.dy=0;}
-      else{this._touchFire=false;if(this._fireDot){this._fireDot.destroy();this._fireDot=null;}}
+      if(p.id===this._tm.id){
+        this._tm={active:false,id:null,sx:0,sy:0,dx:0,dy:0};
+        this._joyBase.setVisible(false);
+        this._joyKnob.setVisible(false);
+      } else {
+        this._touchFire=false;
+        this._fireZone.setFillStyle(0xffaa22,0);
+      }
     });
-
-    // Touch joystick visual
-    this._joyBase=this.add.circle(W/4,H-80,36,0xffffff,0.08).setDepth(95).setStrokeStyle(1.5,0xffffff,0.2);
-    this._joyKnob=this.add.circle(W/4,H-80,18,0xffffff,0.18).setDepth(96);
-    // Fire zone visual
-    this.add.text(W*3/4,H-30,'TAP TO FIRE',{fontSize:'10px',fontFamily:'Courier New',color:'#443322',stroke:'#000',strokeThickness:1}).setOrigin(.5).setDepth(95);
   }
 
   _applyTouchInput(dt){
-    if(!this._touchMove) return;
-    const speedBase=220*this._speedMult;
-    if(this._touchMove.active){
-      const dx=this._touchMove.dx||0, dy=this._touchMove.dy||0;
-      const dist=Math.sqrt(dx*dx+dy*dy);
-      const norm=Math.min(dist,50)/50;
+    if(!this._tm||!this.player?.active) return;
+    const spd=220*(this._speedMult||1);
+    if(this._tm.active){
+      const dist=Math.sqrt(this._tm.dx**2+this._tm.dy**2);
       if(dist>8){
-        this.player.body.velocity.x=Phaser.Math.Linear(this.player.body.velocity.x,(dx/dist)*speedBase*norm,0.22);
-        this.player.body.velocity.y=Phaser.Math.Linear(this.player.body.velocity.y,(dy/dist)*speedBase*norm,0.22);
-        this.player.rotation=Phaser.Math.Linear(this.player.rotation,(dx/dist)*0.35,0.15);
+        const norm=Math.min(dist,46)/46;
+        const nx=this._tm.dx/dist, ny=this._tm.dy/dist;
+        this.player.body.velocity.x=Phaser.Math.Linear(
+          this.player.body.velocity.x, nx*spd*norm, 0.25);
+        this.player.body.velocity.y=Phaser.Math.Linear(
+          this.player.body.velocity.y, ny*spd*norm, 0.25);
+        this.player.rotation=Phaser.Math.Linear(
+          this.player.rotation, nx*0.35, 0.15);
       }
-      // Update knob position
-      const kx=Math.min(Math.max(dx,-36),36), ky=Math.min(Math.max(dy,-36),36);
-      if(this._joyKnob) this._joyKnob.setPosition(W/4+kx,H-80+ky);
-    } else {
-      if(this._joyKnob) this._joyKnob.setPosition(W/4,H-80);
     }
-    if(this._touchFire){this.shootT-=dt;if(this.shootT<=0){this.fire();this.shootT=this.diff.psr;}}
+    if(this._touchFire){
+      this.shootT-=dt;
+      if(this.shootT<=0){ this.fire(); this.shootT=this.diff.psr; }
+    }
   }
+
 
   hudButtons(){
     const D=80;
@@ -3630,6 +3658,7 @@ class Game2Scene extends Phaser.Scene {
     Music.play('game');
     this.hudButtons2();
     // ── Onboarding tip — wave 1 only ──────────────────────────────────────────
+    this._setupTouch();
     this._showOnboarding2();
 
     this.triggerDialogue(0);
@@ -3760,6 +3789,84 @@ class Game2Scene extends Phaser.Scene {
     // Low thermal warning
     if(this.thermal<15&&!this._lowWarnFired){this._lowWarnFired=true;Sfx.play('lowres');this.pop(this.player?.x||W/2,this.player?.y-50||H/2,'⚠ LOW THERMAL','#ff4400',16);}
     else if(this.thermal>=15) this._lowWarnFired=false;
+  }
+
+  _setupTouch(){
+    if(!this.sys.game.device.input.touch) return;
+    this._tm={active:false,id:null,sx:0,sy:0,dx:0,dy:0};
+    this._touchFire=false;
+    this._speedMult=this._speedMult||1;
+
+    const joyR=46; // joystick radius
+    // Joystick base — appears where player first touches on left half
+    this._joyBase=this.add.circle(W/4,H-90,joyR,0xffffff,0.07)
+      .setDepth(95).setStrokeStyle(2,0xffffff,0.18).setVisible(false);
+    this._joyKnob=this.add.circle(W/4,H-90,22,0xffffff,0.22)
+      .setDepth(96).setVisible(false);
+    this._joyTxt=this.add.text(W/4,H-38,'MOVE',
+      {fontSize:'10px',fontFamily:'Courier New',color:'rgba(255,255,255,0.3)'})
+      .setOrigin(.5).setDepth(95);
+
+    // Fire zone — right half
+    this._fireZone=this.add.rectangle(W*3/4,H/2,W/2,H,0xffaa22,0)
+      .setDepth(94).setInteractive();
+    this._fireTxt=this.add.text(W*3/4,H-38,'TAP TO FIRE',
+      {fontSize:'10px',fontFamily:'Courier New',color:'rgba(255,170,34,0.4)'})
+      .setOrigin(.5).setDepth(95);
+
+    this.input.on('pointerdown',(p)=>{
+      if(p.y<60) return; // ignore HUD strip
+      if(p.x<W/2){
+        // Left = joystick origin
+        this._tm={active:true,id:p.id,sx:p.x,sy:p.y,dx:0,dy:0};
+        this._joyBase.setPosition(p.x,p.y).setVisible(true);
+        this._joyKnob.setPosition(p.x,p.y).setVisible(true);
+      } else {
+        this._touchFire=true;
+        this._fireZone.setFillStyle(0xffaa22,0.06);
+      }
+    });
+    this.input.on('pointermove',(p)=>{
+      if(!this._tm.active||p.id!==this._tm.id) return;
+      this._tm.dx=p.x-this._tm.sx;
+      this._tm.dy=p.y-this._tm.sy;
+      const dist=Math.sqrt(this._tm.dx**2+this._tm.dy**2);
+      const clamp=Math.min(dist,joyR);
+      const nx=dist>0?this._tm.dx/dist:0, ny=dist>0?this._tm.dy/dist:0;
+      this._joyKnob.setPosition(this._tm.sx+nx*clamp, this._tm.sy+ny*clamp);
+    });
+    this.input.on('pointerup',(p)=>{
+      if(p.id===this._tm.id){
+        this._tm={active:false,id:null,sx:0,sy:0,dx:0,dy:0};
+        this._joyBase.setVisible(false);
+        this._joyKnob.setVisible(false);
+      } else {
+        this._touchFire=false;
+        this._fireZone.setFillStyle(0xffaa22,0);
+      }
+    });
+  }
+
+  _applyTouchInput(dt){
+    if(!this._tm||!this.player?.active) return;
+    const spd=220*(this._speedMult||1);
+    if(this._tm.active){
+      const dist=Math.sqrt(this._tm.dx**2+this._tm.dy**2);
+      if(dist>8){
+        const norm=Math.min(dist,46)/46;
+        const nx=this._tm.dx/dist, ny=this._tm.dy/dist;
+        this.player.body.velocity.x=Phaser.Math.Linear(
+          this.player.body.velocity.x, nx*spd*norm, 0.25);
+        this.player.body.velocity.y=Phaser.Math.Linear(
+          this.player.body.velocity.y, ny*spd*norm, 0.25);
+        this.player.rotation=Phaser.Math.Linear(
+          this.player.rotation, nx*0.35, 0.15);
+      }
+    }
+    if(this._touchFire){
+      this.shootT-=dt;
+      if(this.shootT<=0){ this.fire(); this.shootT=this.diff.psr; }
+    }
   }
 
   hudButtons2(){
@@ -4566,6 +4673,7 @@ class Game2Scene extends Phaser.Scene {
     if(this.over||this.clear)return;
     if(Phaser.Input.Keyboard.JustDown(this.esc)){this.scene.pause('Game2');this.scene.launch('Pause2');return;}
 
+    this._applyTouchInput(dt);
     this.bg1.tilePositionY-=.4;this.bg2.tilePositionY-=.9;this.bg3.tilePositionY-=1.5;
     // Aurora drift
     this.aurora.setAlpha(0.12+Math.sin(time/2000)*0.06);
@@ -5252,14 +5360,7 @@ class Game3Scene extends Phaser.Scene {
     Music.play('game');
     this.hudButtons3();
     this._setupTouch();
-    // Mobile sonar button — touch only
-    if(this.sys.game.device.input.touch){
-      const sb=this.add.text(W-16,H/2,'◎\nSONAR',{fontSize:'18px',fontFamily:'Courier New',
-        color:'#cc88ff',align:'center',stroke:'#000',strokeThickness:3}).setOrigin(1,.5).setDepth(100).setAlpha(0.75);
-      sb.setInteractive({useHandCursor:true});
-      sb.on('pointerdown',()=>this.fireSonar());
-      sb.on('pointerover',()=>sb.setAlpha(1)); sb.on('pointerout',()=>sb.setAlpha(0.75));
-    }
+    // Sonar touch button now inside _setupTouch()
     // ── Onboarding tip — wave 1 only ──────────────────────────────────────────
     this._showOnboarding3();
 
@@ -5416,6 +5517,103 @@ class Game3Scene extends Phaser.Scene {
       this.etxt.setText(rem>0?'ENEMIES LEFT: '+rem:'');
     } else this.etxt.setText('');
     if(this.bossOn&&this.boss) this.bbfg.width=Math.max(0,(W-60)*(this.bossHp/this.bossMax));
+  }
+
+  _setupTouch(){
+    if(!this.sys.game.device.input.touch) return;
+    this._tm={active:false,id:null,sx:0,sy:0,dx:0,dy:0};
+    this._touchFire=false;
+    this._speedMult=this._speedMult||1;
+
+    const joyR=46;
+    this._joyBase=this.add.circle(W/4,H-90,joyR,0xffffff,0.07)
+      .setDepth(95).setStrokeStyle(2,0xffffff,0.18).setVisible(false);
+    this._joyKnob=this.add.circle(W/4,H-90,22,0x8844ff,0.28)
+      .setDepth(96).setVisible(false);
+    this.add.text(W/4,H-38,'MOVE',
+      {fontSize:'10px',fontFamily:'Courier New',color:'rgba(200,170,255,0.35)'})
+      .setOrigin(.5).setDepth(95);
+
+    // Fire zone right half (excluding sonar button area)
+    this._fireZone=this.add.rectangle(W*3/4,H/2,W/2,H,0xaa44ff,0)
+      .setDepth(94).setInteractive();
+    this.add.text(W*3/4,H-38,'TAP TO FIRE',
+      {fontSize:'10px',fontFamily:'Courier New',color:'rgba(170,68,255,0.4)'})
+      .setOrigin(.5).setDepth(95);
+
+    // Sonar button — top right, always visible
+    const sBg=this.add.circle(W-38,H/2-20,34,0xaa44ff,0.18)
+      .setDepth(97).setStrokeStyle(2,0xcc88ff,0.6).setInteractive({useHandCursor:true});
+    const sTxt=this.add.text(W-38,H/2-26,'◎',
+      {fontSize:'22px',fontFamily:'Arial',color:'#cc88ff',stroke:'#000',strokeThickness:2})
+      .setOrigin(.5).setDepth(98);
+    const sLbl=this.add.text(W-38,H/2+4,'SONAR',
+      {fontSize:'9px',fontFamily:'Courier New',color:'#aa66ff'})
+      .setOrigin(.5).setDepth(98);
+    sBg.on('pointerdown',()=>this.fireSonar());
+    sBg.on('pointerover',()=>sBg.setFillStyle(0xaa44ff,0.35));
+    sBg.on('pointerout', ()=>sBg.setFillStyle(0xaa44ff,0.18));
+    // Update sonar button opacity based on charges
+    this._sonarBtn={bg:sBg,txt:sTxt,lbl:sLbl};
+
+    this.input.on('pointerdown',(p)=>{
+      if(p.y<60) return;
+      if(p.x<W/2){
+        this._tm={active:true,id:p.id,sx:p.x,sy:p.y,dx:0,dy:0};
+        this._joyBase.setPosition(p.x,p.y).setVisible(true);
+        this._joyKnob.setPosition(p.x,p.y).setVisible(true);
+      } else if(p.x<W-20&&!(p.x>W-72&&p.y>H/2-54&&p.y<H/2+14)){
+        this._touchFire=true;
+        this._fireZone.setFillStyle(0xaa44ff,0.06);
+      }
+    });
+    this.input.on('pointermove',(p)=>{
+      if(!this._tm.active||p.id!==this._tm.id) return;
+      this._tm.dx=p.x-this._tm.sx;
+      this._tm.dy=p.y-this._tm.sy;
+      const dist=Math.sqrt(this._tm.dx**2+this._tm.dy**2);
+      const clamp=Math.min(dist,joyR);
+      const nx=dist>0?this._tm.dx/dist:0, ny=dist>0?this._tm.dy/dist:0;
+      this._joyKnob.setPosition(this._tm.sx+nx*clamp, this._tm.sy+ny*clamp);
+    });
+    this.input.on('pointerup',(p)=>{
+      if(p.id===this._tm.id){
+        this._tm={active:false,id:null,sx:0,sy:0,dx:0,dy:0};
+        this._joyBase.setVisible(false);
+        this._joyKnob.setVisible(false);
+      } else {
+        this._touchFire=false;
+        this._fireZone.setFillStyle(0xaa44ff,0);
+      }
+    });
+  }
+
+  _applyTouchInput(dt){
+    if(!this._tm||!this.player?.active) return;
+    const spd=220*(this._speedMult||1);
+    if(this._tm.active){
+      const dist=Math.sqrt(this._tm.dx**2+this._tm.dy**2);
+      if(dist>8){
+        const norm=Math.min(dist,46)/46;
+        const nx=this._tm.dx/dist, ny=this._tm.dy/dist;
+        this.player.body.velocity.x=Phaser.Math.Linear(
+          this.player.body.velocity.x, nx*spd*norm, 0.25);
+        this.player.body.velocity.y=Phaser.Math.Linear(
+          this.player.body.velocity.y, ny*spd*norm, 0.25);
+        this.player.rotation=Phaser.Math.Linear(
+          this.player.rotation, nx*0.35, 0.15);
+      }
+    }
+    if(this._touchFire){
+      this.shootT-=dt;
+      if(this.shootT<=0){ this.fire(); this.shootT=this.diff.psr; }
+    }
+    // Update sonar button visual
+    if(this._sonarBtn){
+      const a=this.sonarCharges>0?0.9:0.25;
+      this._sonarBtn.txt.setAlpha(a);
+      this._sonarBtn.lbl.setAlpha(a);
+    }
   }
 
   hudButtons3(){
@@ -6117,6 +6315,7 @@ class Game3Scene extends Phaser.Scene {
     if(this.over||this.clear) return;
     if(Phaser.Input.Keyboard.JustDown(this.esc)){this.scene.pause('Game3');this.scene.launch('Pause3');return;}
 
+    this._applyTouchInput(dt);
     this.bg3.tilePositionY-=.4; if(this.bg3b) this.bg3b.tilePositionY-=.18;
 
     // Ship controls

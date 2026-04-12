@@ -1,110 +1,114 @@
 # STARFALL — Complete Edition
 
 A three-episode vertical-scrolling shoot-em-up built with **Phaser 3** and **HTML5 Canvas**.  
-Delivered as a single self-contained `index.html` file — open it in any modern browser and play.  
+Delivered as a single self-contained `index.html` file — open in any modern browser and play.  
 No installation, no server, no dependencies beyond the one-time Phaser CDN load.
 
 ---
 
 ## How to Play
 
-**Double-click `index.html` to launch** (or visit the deployed URL).
+**Double-click `index.html`** or visit the deployed URL.
 
-Chrome, Firefox, Safari 14+, and Edge (desktop) are all supported.
+Works on **desktop and mobile**. Controls adapt automatically to the device.
 
-### Controls
+### Desktop Controls
 
 | Input | Action |
 |-------|--------|
 | `WASD` or Arrow Keys | Move ship (8-directional) |
-| `SPACE` | Fire weapon |
-| `Q` | **Sonar Pulse** *(Episode III — reveals cloaked enemies)* |
-| `1–4` | Select difficulty on keyboard |
+| `SPACE` | Fire weapon (hold to auto-fire) |
+| `Q` | Sonar Pulse *(EP III only — reveals cloaked enemies)* |
+| `1–4` | Select difficulty |
 | `ENTER` | Confirm / advance |
 | `ESC` | Pause / Resume |
-| `←` `→` Arrow Keys | Navigate pilot carousel |
-| Touch left half | Virtual joystick (mobile) |
-| Touch right half | Fire (mobile) |
-| Gamepad left stick | Move |
-| Gamepad RT / A | Fire |
+| `←` `→` | Navigate pilot carousel |
+
+### Mobile Controls
+
+| Zone | Action |
+|------|--------|
+| **Left half of screen** | Drag anywhere — virtual joystick appears at touch point |
+| **Right half of screen** | Tap or hold to fire continuously |
+| **◎ button (top right, EP III)** | Sonar Pulse — dims when no charges remain |
+| Pause button | Bottom right corner |
+
+> On touch devices the FTUX screen automatically shows the mobile control layout.
 
 ---
 
 ## Game Flow
 
 ```
-[ STARFALL Title Screen — Click to Begin ]
-         ↓
+[ STARFALL — Click / Tap to Begin ]
+          ↓
 [ THE KETHARAN WAR — full story crawl ]
-         ↓
-[ Enter Your Pilot Callsign ]
-         ↓
-[ Choose Your Pilot — cinematic carousel (6 pilots) ]
-         ↓
+          ↓
+[ Enter Pilot Callsign ]
+          ↓
+[ Choose Your Pilot — cinematic carousel ]
+          ↓
 [ EPISODE I BRIEFING — mission context ]
-         ↓
+          ↓
 [ Select Difficulty ]
-         ↓
-[ EP I — Desert Sector  →  EP II — Ice Reach  →  EP III — The Veil ]
+          ↓
+[ EP I — Desert Sector ]
+          ↓  Mission Complete
+[ EP II — Ice Reach ]
+          ↓  Mission Complete
+[ EP III — The Veil ]
+          ↓  Mission Complete
+[ Final score · FITZ debrief · itch.io CTA ]
 ```
 
-Each episode has a mission complete screen with a bridge to the next episode.  
-Episode completion, pilot name, and high scores persist across sessions via `localStorage`.
+Pilot name, avatar, difficulty, and episode completion persist across sessions via `localStorage`.
 
 ---
 
 ## Episodes
 
 ### Episode I — Desert Sector
-*Year 2847. One pilot. Zero backup. The Ketharan Viper fleet holds the sector.*
-
-**3 waves + boss: Desert Viper (3 phases)**
+*One pilot. Zero backup. Break through the Ketharan Viper fleet.*
 
 - Desert amber palette
 - Finite ammo — fly over supply tents to restock
-- Wave kill counter on HUD
-- Multi-directional enemy drip spawner (top, sides, centre-drop)
-- Wave 3: Miniboss Lieutenant escort
+- 3 waves + miniboss escort + **Desert Viper** boss (3 phases)
 - Boss Dossier briefing card before the fight
-- FITZ dialogue throughout
+- FITZ dialogue throughout all waves
 
 ### Episode II — Ice Reach
-*The Dominion retreats to frozen outer colonies. The pursuit continues.*
-
-**3 waves + boss: The Glacier (3 destructible hangar bays)**
+*The pursuit continues to frozen outer colonies.*
 
 - Ice blue palette with aurora shimmer
-- **Thermal gauge** — drains passively in the cold; replaces shield
-- **Freeze Mines** — contact freezes ship to 30% speed for 3 seconds
-- **Ice Shards** — fast hazards from all directions; large ones shatter
-- **Supply Crates** — restore ammo and thermal
-- **Pilot Swap** — after Wave 2, reassign to a specialist
-- **Boss Transmission** — intercepted taunt from Commander Vreth
+- **Thermal gauge** — drains passively in cold; replaces shield
+- **Freeze Mines** — freezes ship to 30% speed for 3 seconds
+- **Ice Shards** — multi-directional hazards; large ones shatter
+- **Supply Crates** — restore ammo + thermal
+- **Pilot Swap** after Wave 2
+- **Boss Transmission** before **The Glacier** (3 destructible hangar bays)
 
 ### Episode III — The Veil
-*The Dominion flees into deep space. No maps. No signals. No backup.*
-
-**3 waves + boss: The Sovereign (fully cloaked)**
+*Deep space. No maps. No signals. No backup.*
 
 - Void purple palette, near-total darkness, ship light cone
 - **Energy system** — regenerates passively; firing costs 2 energy
 - **Sonar Pulse `[Q]`** — 5 charges; reveals all enemies for 3 seconds
 - **Phantom Scouts** — invisible until they fire
 - **Shade Carriers** — drop 3 cloaked drones on death
-- **Void Rifts** — gravitational pull zones; damage at close range
-- **The Sovereign** — fully cloaked; bullets blocked unless Sonar-revealed
+- **Void Rifts** — gravitational pull zones
+- **The Sovereign** — fully cloaked; bullets blocked until Sonar-revealed
 
 ---
 
 ## Pilot Roster
 
-Six pilots selectable via cinematic carousel — each with full name, role, special ability, and bio shown on screen.
+Six pilots selectable via cinematic carousel. Each card shows portrait, role, special ability, and bio.
 
 | Pilot | Role | Special Ability |
 |-------|------|----------------|
 | **NOVA** | Scout Pilot | +20% ship speed |
 | **VEGA** | Ace Fighter | 2× ammo / energy capacity |
-| **ORION** | Recon Expert | Early Warning / 2× Sonar reveal |
+| **ORION** | Recon Expert | Early Warning / 2× Sonar reveal duration |
 | **LYRA** | Combat Engineer | +25–30% bullet damage |
 | **SIRIUS** | Heavy Gunner | Full thermal start / 2× energy regen |
 | **ASTRA** | Stealth Raider | Freeze immune (EP II) / Void immune (EP III) |
@@ -122,21 +126,36 @@ Six pilots selectable via cinematic carousel — each with full name, role, spec
 
 ---
 
-## HUD Reference
+## HUD Layout
 
 ```
-┌─────────────────────────────────────────────────────┐
-│ [avatar] PILOT     9,800 ×4         WAVE 1/4        │  ← Row 1
-│ ♥♥♥♥♥           ENEMIES LEFT: 9    [VETERAN]        │  ← Row 2
-└─────────────────────────────────────────────────────┘
-  gameplay area
-┌─────────────────────────────────────────────────────┐
-│ SHD ████████████    AMMO ████████████  120/120      │
-│ HP  ████████████                                    │
-└─────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│ [av] PILOT      9,800 ×4          WAVE 1/4           │  Row 1
+│ ♥♥♥♥♥         ENEMIES LEFT: 9    [VETERAN]           │  Row 2
+└──────────────────────────────────────────────────────┘
+  — gameplay —
+┌──────────────────────────────────────────────────────┐
+│ SHD ████████████     AMMO ████████████  120/120      │
+│ HP  ████████████                                     │
+└──────────────────────────────────────────────────────┘
 ```
 
-Combo multiplier baked into the score line (e.g. `9,800 ×4`) — colour shifts white → yellow → orange as multiplier increases.
+Combo multiplier shown inline in score (`9,800 ×4`) — colour shifts white → yellow → orange.
+
+---
+
+## Music
+
+Four synthesised tracks via Web Audio API — no external audio files needed.
+
+| Track | When |
+|-------|------|
+| **Menu theme** | Title → crawl → callsign → EP I briefing (continuous, no gaps) |
+| **Game theme** | All wave gameplay |
+| **Boss theme** | All boss encounters |
+| **Crawl theme** | EP II + III preludes |
+
+The menu theme is a D minor melody with suspense and release — builds from melody alone through bass, pads, and full drums.
 
 ---
 
@@ -144,29 +163,14 @@ Combo multiplier baked into the score line (e.g. `9,800 ×4`) — colour shifts 
 
 | Action | Points |
 |--------|--------|
-| Grunt / Drone kill | 100–130 |
-| Scout / Phantom kill | 200–280 |
-| Elite kill | 500–550 |
-| Shade Carrier kill | 600 |
-| Miniboss kill | 1,200 |
-| Boss kill | 2,000–3,000 |
-| Combo (no damage streak) | ×2 / ×4 / ×8 |
-| Stage clear survival bonus | 500–800 + stats remaining |
-
----
-
-## Music
-
-Four synthesised Web Audio API tracks — no external audio files required:
-
-| Track | Used in |
-|-------|---------|
-| **Menu theme** | Title screen → crawl → callsign → EP I briefing |
-| **Game theme** | All gameplay waves |
-| **Boss theme** | All boss encounters |
-| **Crawl theme** | EP II and III preludes |
-
-The menu track is a D minor theme with suspense and release — rises, dips, climbs, resolves. Continuous from first click through the full prelude sequence.
+| Grunt / Drone | 100–130 |
+| Scout / Phantom | 200–280 |
+| Elite | 500–550 |
+| Shade Carrier | 600 |
+| Miniboss | 1,200 |
+| Boss | 2,000–3,000 |
+| Combo (no-damage streak) | ×2 / ×4 / ×8 |
+| Stage clear survival bonus | 500–800 + stats |
 
 ---
 
@@ -175,14 +179,15 @@ The menu track is a D minor theme with suspense and release — rises, dips, cli
 | Item | Detail |
 |------|--------|
 | Engine | Phaser 3.60.0 via jsDelivr CDN |
-| Renderer | WebGL (auto-fallback to Canvas 2D) |
-| Canvas | 480 × 720 px logical, `Phaser.Scale.FIT` responsive |
-| Sprites | Procedurally generated via Canvas 2D API — zero external art files |
-| Music | Web Audio API — 4 synthesised chiptune tracks |
-| SFX | Web Audio API — all effects synthesised at runtime |
-| Persistence | `localStorage` — scores, run history, pilot name, episode completion |
-| File size | ~450 KB single HTML file |
+| Renderer | WebGL → Canvas 2D fallback |
+| Canvas | 480 × 720 px, `Phaser.Scale.FIT` responsive |
+| Sprites | Procedurally generated — zero external art files |
+| Audio | Web Audio API — all music + SFX synthesised at runtime |
+| Touch | Virtual joystick (appears at touch point) + fire zone + EP III sonar button |
+| Gamepad | Left stick move, RT / A fire |
+| Persistence | `localStorage` — scores, history, pilot name, episode completion |
 | Scenes | 30 Phaser scenes across 3 episodes |
+| File size | ~465 KB single HTML file |
 
 ---
 
@@ -190,17 +195,25 @@ The menu track is a D minor theme with suspense and release — rises, dips, cli
 
 ```
 starfall/
-├── index.html     ← Complete Edition (EP I + II + III) — the deliverable
-├── README.md      ← This file
-└── EVALS.md       ← Evaluation suite
+├── index.html    ← Complete Edition (EP I + II + III) — the deliverable
+├── README.md     ← This file
+└── EVALS.md      ← Evaluation suite (all checks passing)
 ```
+
+---
+
+## Deployment
+
+Hosted via **Vercel** — every push to `main` auto-deploys.  
+For local play: download `index.html` and open in Chrome / Firefox / Safari 14+.  
+For local music testing: `python3 -m http.server 8080` then open `http://localhost:8080`.
 
 ---
 
 ## Credits
 
 Built with [Phaser 3](https://phaser.io) — MIT Licence.  
-All game code, procedural sprite generation, and audio synthesis original.
+All game code, procedural sprites, and audio synthesis original.
 
 ---
 
