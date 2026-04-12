@@ -1076,19 +1076,18 @@ class DifficultySelectScene extends Phaser.Scene {
     const curAv=this.registry.get('avatarId')??0;
     const avK2='dav_'+curAv;
     if(!this.textures.exists(avK2)){const ac=getAvatarCanvas(curAv,52);this.textures.addCanvas(avK2,ac);}
-    // Header card with avatar
-    this.add.rectangle(W/2,36,W-40,62,0x000d22,0.9).setStrokeStyle(1,0x224466);
-    this.add.image(46,36,avK2).setDepth(3);
-    this.add.text(80,24,'WELCOME ABOARD',{fontSize:'10px',fontFamily:'Courier New',color:'#446688'}).setDepth(3);
-    this.add.text(80,38,pilot,{fontSize:'19px',fontFamily:'Courier New',color:'#aaddff',stroke:'#000',strokeThickness:3}).setDepth(3);
-    this.add.text(80,58,AVATARS[curAv].name+' · CALLSIGN CONFIRMED',{fontSize:'9px',fontFamily:'Courier New',color:'#335566'}).setDepth(3);
-    this.add.text(W/2,74,'FITZ needs a threat calibration. Select difficulty:',
-      {fontSize:'10px',fontFamily:'Courier New',color:'#446688'}).setOrigin(.5);
-    this.add.rectangle(W/2,84,W-60,1,0x224488);
+    // Header card with avatar — taller to avoid overlap
+    this.add.rectangle(W/2,46,W-40,84,0x000d22,0.9).setStrokeStyle(1,0x224466).setDepth(2);
+    this.add.image(46,46,avK2).setDepth(3);
+    this.add.text(82,18,'WELCOME ABOARD',{fontSize:'10px',fontFamily:'Courier New',color:'#446688'}).setDepth(3);
+    this.add.text(82,32,pilot,{fontSize:'20px',fontFamily:'Courier New',color:'#aaddff',stroke:'#000',strokeThickness:3}).setDepth(3);
+    this.add.text(82,58,AVATARS[curAv].name+' · CALLSIGN CONFIRMED',{fontSize:'9px',fontFamily:'Courier New',color:'#335566'}).setDepth(3);
+    this.add.text(82,72,'FITZ: select difficulty below.',{fontSize:'10px',fontFamily:'Courier New',color:'#446688'}).setDepth(3);
+    this.add.rectangle(W/2,96,W-60,1,0x224488).setDepth(3);
 
     const diffKeys=Object.keys(DIFF);
     diffKeys.forEach((key,i)=>{
-      const d=DIFF[key], y=124+i*140;
+      const d=DIFF[key], y=110+i*140;
       const panel=this.add.rectangle(W/2,y+46,W-52,120,0x000d1f,0.92)
         .setStrokeStyle(1.5,parseInt(d.color.replace('#','0x')))
         .setInteractive({useHandCursor:true}).setDepth(2);
