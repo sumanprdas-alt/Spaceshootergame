@@ -665,8 +665,8 @@ function makeNativeInput(defaultVal, accentColor, onConfirm) {
   const scaleY = rect.height / 720;
 
   // Width matches card interior, height slim and elegant
-  const iw = Math.round(320 * scaleX);
-  const ih = Math.round(48  * scaleY);
+  const iw = Math.round(260 * scaleX);
+  const ih = Math.round(36  * scaleY);
   const ix = Math.round(rect.left + (480/2 - 160) * scaleX);
   // Position: just above the CONFIRM button (which is at ~H/2+108 = 468px)
   // So place input at ~H/2+44 = 404px, leaving clear gap before button
@@ -689,21 +689,22 @@ function makeNativeInput(defaultVal, accentColor, onConfirm) {
     top:          iy + 'px',
     width:        iw + 'px',
     height:       ih + 'px',
-    fontSize:     Math.round(28 * scaleX) + 'px',
-    fontFamily:   'Courier New, monospace',
-    fontWeight:   'bold',
+    fontSize:     Math.round(18 * scaleX) + 'px',
+    fontFamily:   'Arial, sans-serif',
+    fontWeight:   'normal',
     color:        accentColor || '#ffe866',
-    background:   'transparent',          // No box background
-    border:       'none',                 // No box border
-    borderBottom: '2px solid ' + (accentColor || '#cc8833'), // Just an underline
+    background:   'transparent',
+    border:       'none',
+    borderBottom: '1px solid ' + (accentColor || '#cc8833'),
     borderRadius: '0',
     textAlign:    'center',
     outline:      'none',
     zIndex:       '9999',
-    letterSpacing:'4px',
+    letterSpacing:'3px',
     caretColor:   accentColor || '#ffe866',
     padding:      '0',
     boxSizing:    'border-box',
+    opacity:      '0.9',
   });
 
   document.body.appendChild(inp);
