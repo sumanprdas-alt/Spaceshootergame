@@ -670,7 +670,7 @@ function makeNativeInput(defaultVal, accentColor, onConfirm) {
   const ix = Math.round(rect.left + (480/2 - 160) * scaleX);
   // Position: just above the CONFIRM button (which is at ~H/2+108 = 468px)
   // So place input at ~H/2+44 = 404px, leaving clear gap before button
-  const iy = Math.round(rect.top  + 720 * 0.537 * scaleY);
+  const iy = Math.round(rect.top  + 720 * 0.595 * scaleY);
 
   const inp = document.createElement('input');
   inp.id             = 'sf-name-input';
@@ -1296,10 +1296,7 @@ class CallsignEntryScene extends Phaser.Scene {
     this.add.text(W/2,H/2+4,'What name do they know you by?',
       {fontSize:'13px',fontFamily:'Arial',color:'#886644'}).setOrigin(.5);
 
-    // Input label — the native input appears here (no decorative box behind it)
-    this.add.text(W/2,H/2+30,'Type your callsign below',
-      {fontSize:'11px',fontFamily:'Courier New',color:'#557799',
-       letterSpacing:1}).setOrigin(.5);
+
 
     // CONFIRM button
     const confirmBtn=this.add.rectangle(W/2,H/2+108,190,44,0x331100,0.97)
@@ -5198,9 +5195,7 @@ class Ep3CallsignScene extends Phaser.Scene {
     this.add.text(W/2,H/2+4,'What name do they call you in the dark?',
       {fontSize:'12px',fontFamily:'Arial',color:'#bba8cc'}).setOrigin(.5);
 
-    this.add.text(W/2,H/2+28,'Type your callsign below',
-      {fontSize:'11px',fontFamily:'Courier New',color:'#886699',
-       letterSpacing:1}).setOrigin(.5);
+
 
     // CONFIRM button
     const confirmBtn=this.add.rectangle(W/2,H/2+104,190,44,0x110022,0.97)
