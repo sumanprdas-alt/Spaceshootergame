@@ -656,7 +656,6 @@ function clearEpisodeProgress(ep){ localStorage.removeItem('sf_ep_save_'+ep); }
 // Creates a real HTML <input> overlaid on the Phaser canvas, styled to match.
 // On confirm (Enter key or tap of confirm btn), calls onConfirm(name).
 function makeNativeInput(defaultVal, accentColor, onConfirm) {
-  // Remove any existing input
   const old = document.getElementById('sf-name-input');
   if (old) old.remove();
 
@@ -665,49 +664,50 @@ function makeNativeInput(defaultVal, accentColor, onConfirm) {
   const scaleX = rect.width  / 480;
   const scaleY = rect.height / 720;
 
-  // Position the input over the centre of the canvas (vertically ~55%)
-  const iw = Math.round(300 * scaleX);
-  const ih = Math.round(52  * scaleY);
-  const ix = Math.round(rect.left + (480/2 - 150) * scaleX);
-  const iy = Math.round(rect.top  + 720 * 0.565 * scaleY);
+  // Width matches card interior, height slim and elegant
+  const iw = Math.round(320 * scaleX);
+  const ih = Math.round(48  * scaleY);
+  const ix = Math.round(rect.left + (480/2 - 160) * scaleX);
+  // Position: just above the CONFIRM button (which is at ~H/2+108 = 468px)
+  // So place input at ~H/2+44 = 404px, leaving clear gap before button
+  const iy = Math.round(rect.top  + 720 * 0.537 * scaleY);
 
   const inp = document.createElement('input');
-  inp.id          = 'sf-name-input';
-  inp.type        = 'text';
-  inp.maxLength   = 14;
-  inp.value       = defaultVal || '';
-  inp.placeholder = 'Enter name…';
-  inp.autocomplete = 'off';
-  inp.autocorrect  = 'off';
-  inp.spellcheck   = false;
+  inp.id             = 'sf-name-input';
+  inp.type           = 'text';
+  inp.maxLength      = 14;
+  inp.value          = defaultVal || '';
+  inp.placeholder    = '';          // No placeholder text
+  inp.autocomplete   = 'off';
+  inp.autocorrect    = 'off';
+  inp.spellcheck     = false;
   inp.autocapitalize = 'characters';
 
   Object.assign(inp.style, {
-    position:        'fixed',
-    left:            ix + 'px',
-    top:             iy + 'px',
-    width:           iw + 'px',
-    height:          ih + 'px',
-    fontSize:        Math.round(26 * scaleX) + 'px',
-    fontFamily:      'Arial, sans-serif',
-    fontWeight:      'bold',
-    color:           accentColor || '#ffe866',
-    background:      'rgba(0,8,20,0.97)',
-    border:          '2px solid ' + (accentColor || '#cc8833'),
-    borderRadius:    '4px',
-    textAlign:       'center',
-    outline:         'none',
-    zIndex:          '9999',
-    letterSpacing:   '2px',
-    caretColor:      accentColor || '#ffe866',
-    padding:         '0 8px',
-    boxSizing:       'border-box',
+    position:     'fixed',
+    left:         ix + 'px',
+    top:          iy + 'px',
+    width:        iw + 'px',
+    height:       ih + 'px',
+    fontSize:     Math.round(28 * scaleX) + 'px',
+    fontFamily:   'Courier New, monospace',
+    fontWeight:   'bold',
+    color:        accentColor || '#ffe866',
+    background:   'transparent',          // No box background
+    border:       'none',                 // No box border
+    borderBottom: '2px solid ' + (accentColor || '#cc8833'), // Just an underline
+    borderRadius: '0',
+    textAlign:    'center',
+    outline:      'none',
+    zIndex:       '9999',
+    letterSpacing:'4px',
+    caretColor:   accentColor || '#ffe866',
+    padding:      '0',
+    boxSizing:    'border-box',
   });
 
   document.body.appendChild(inp);
-
-  // Focus immediately — triggers iOS keyboard
-  setTimeout(() => { inp.focus(); inp.select(); }, 80);
+  setTimeout(() => { inp.focus(); }, 80);
 
   const confirm = () => {
     const name = inp.value.trim().toUpperCase().slice(0, 14);
@@ -720,7 +720,6 @@ function makeNativeInput(defaultVal, accentColor, onConfirm) {
     if (e.key === 'Enter') { e.preventDefault(); confirm(); }
   });
 
-  // Return confirm fn so caller can wire a button to it
   return confirm;
 }
 
